@@ -2,6 +2,7 @@
 //or with a commandline runner: brew install v8; d8 --module test.js
 
 import {Token, InvalidToken, Lexer} from '../modules/lexer.js';
+import {FunctionDef, Parser} from '../modules/parser.js';
 function test(name, code){
     try {
         console.log('running ', name);
@@ -104,12 +105,40 @@ test('words', () => {
     assert(tokens[5].col == 8);
 });
 
-// test('mixed lexing', () => {
-//     let lexer = new Lexer(`void int hello while
-//     if else`); //'!' is invalid token
-//     // for(let token of lexer){
-//     //     console.log(token);
-//     // }
-//     let tokens = Array.from(lexer);
-//     let values = tokens.map(x => x.value);
-// });
+test('mixed lexing', () => {
+    let lexer = new Lexer(`void function(int x, int y){
+        int z = 3;
+        int y = 5;
+        return y+z;
+    }`); //'!' is invalid token
+    // for(let token of lexer){
+    //     console.log(token);
+    // }
+    let tokens = Array.from(lexer);
+    let values = tokens.map(x => x.value);
+    console.log(values.join(' '));
+    assert(arraysEqual(values, ['void', 'function', '(', 'int', 'x', ',',
+    'int', 'y', ')', '{', 'int', 'z', '=', 3, ';', 'int', 'y', '=', 5, ';',
+    'return', 'y', '+', 'z', ';', '}']));
+
+});
+
+
+test('empty function def', ()=>{
+    let lexer = new Lexer(`int aName(){
+    }`);
+    let parser = new Parser(lexer);
+    let func = parser.parseFunction();
+    assert(func instanceof FunctionDef);
+    console.log(JSON.stringify(func));
+});
+
+test('func with parameters', ()=>{
+    let lexer = new Lexer(`int aName(int x,
+        int y, int z){
+    }`);
+    let parser = new Parser(lexer);
+    let func = parser.parseFunction();
+    assert(func instanceof FunctionDef);
+    console.log(JSON.stringify(func));
+});

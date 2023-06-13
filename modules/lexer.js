@@ -15,6 +15,11 @@ export class InvalidToken {
     }
 }
 
+export let delimiters = new Set(['(', ')', '{', '}', ';', ',']);
+export let arithmeticOps = new Set(['+', '-']);
+export let logicOps = new Set(['>', '<', '>=', '<=', '==', '!=']);
+export let EOF = Symbol.for("End of File");
+
 //Expose the lexer as an iterable so you can, for example,
 //loop over tokens in the stream with a foreach loop
 export class Lexer {
@@ -25,9 +30,8 @@ export class Lexer {
 
     }
 
-    delimiters = new Set(['(', ')', '{', '}', ';']);
-    arithmeticOps = new Set(['+', '-']);
-    logicOps = new Set(['>', '<', '>=', '<=', '==', '!=']);
+
+
 
     //lex next token
     [Symbol.iterator]() {
@@ -62,7 +66,7 @@ export class Lexer {
                     let startCol = col;
                     let startIndex = index;
                     while(hasMore() && !(whitespace.has(currentChar()) || logicChars.has(currentChar()) ||
-                        this.delimiters.has(currentChar()) || this.arithmeticOps.has(currentChar()))){
+                        delimiters.has(currentChar()) || arithmeticOps.has(currentChar()))){
                         ++col;
                         ++index;
                     }
@@ -80,14 +84,18 @@ export class Lexer {
                 }
                 
                 if (!hasMore()) {
-                    return { done: true };
+                    //I think things like Array.from will ignore this since done is true,
+                    //but calling next directly lets you inspect it?
+                    return { value: new InvalidToken(EOF, line, col), done: true}
+
                 }
 
 
-                console.log("skipped white space.  Line: ", line, " col ", col, " curChar: ", currentChar());
+                //console.log("skipped white space.  Line: ", line, " col ", col, " curChar: ", currentChar());
+                
                 if (isDigit(currentChar())){
                     return { value: parseIntLiteral(), done: false };
-                } else if (this.delimiters.has(currentChar()) || this.arithmeticOps.has(currentChar())) {
+                } else if (delimiters.has(currentChar()) || arithmeticOps.has(currentChar())) {
                     let retVal = currentChar();
                     let ret = { value: token(retVal), done: false };
                     index++;
