@@ -142,3 +142,15 @@ test('func with parameters', ()=>{
     assert(func instanceof FunctionDef);
     console.log(JSON.stringify(func));
 });
+
+test('func with body', ()=>{
+    let lexer = new Lexer(`int aName(){
+        int x = 0;
+        if(x < 3){} else {}
+        while(3 > x){}
+    }`);
+    let parser = new Parser(lexer);
+    let func = parser.parseFunction();
+    assert(func instanceof FunctionDef);
+    console.log(JSON.stringify(func));
+});
