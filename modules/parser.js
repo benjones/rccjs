@@ -104,7 +104,16 @@ export class ReturnStatement extends ASTNode {
         super(startLine, startCol, endLine, endCol);
         this.expr = expr;
     }
-}   
+}
+
+export class AssignmentStatement extends ASTNode {
+    constructor(startLine, startCol, endLine, endCol,
+        lhs, expr) {
+        super(startLine, startCol, endLine, endCol);
+        this.lhs = lhs;
+        this.expr = expr;
+    }
+}
 
 let keywords = new Set(['int', 'void', 'if', 'while', 'else', 'return']);
 
@@ -214,7 +223,7 @@ export class Parser {
         let idToken = this.#nextToken();
         //check the name in a later step
         this.#expect('=');
-        let expression = this.#parseExpression(); //should be int, check that later
+        let expression = this.#parseSimpleExpression(); //should be int, check that later
         let semi = this.#expect(';');
         console.log("OK declaration");
         return new VarDeclaration(typeToken.line, typeToken.col, semi.line, semi.col, idToken, expression);
@@ -252,7 +261,13 @@ export class Parser {
         return new ReturnStatement(keyword.line, keyword.col, semi.line, semi.col, expr);
 
     }
-    #parseAssignmentStatement() { }
+    #parseAssignmentStatement() {
+        let lhs = this.#nextToken(); //should be a var name
+        this.#expect('=');
+        let rhs = this.#parseExpression();
+        let semi = this.#expect(';');
+        return new AssignmentStatement(lhs.line, lhs.col, semi.line, semi.col, lhs, rhs);
+    }
 
     #parseExpression(){
         //could be a simpleExpression, exp + exp,  exp - exp, -exp

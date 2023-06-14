@@ -158,7 +158,9 @@ test('func with body', ()=>{
 
 test('func compound expression', ()=>{
     let lexer = new Lexer(`int func(int x, int y, int z){
-        return x + y + z + 3 + -x;
+        int b = 1;
+        b = b + x + y;
+        return x + y + z + 3 + -b;
     }`);
     let parser = new Parser(lexer);
     let func = parser.parseFunction();
