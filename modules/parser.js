@@ -13,8 +13,9 @@ class ASTNode {
 }
 
 class ParseError extends ASTNode {
-    constructor(startLine, startCol, endLine, endCol, todo) {
+    constructor(startLine, startCol, endLine, endCol, reason) {
         super(startLine, startCol, endLine, endCol);
+        this.reason = reason;
     }
 }
 
@@ -29,6 +30,22 @@ class VariableExpression extends ASTNode {
     constructor(startLine, startCol, endLine, endCol, name) {
         super(startLine, startCol, endLine, endCol);
         this.name = name;
+    }
+}
+
+class NegationExpression extends ASTNode {
+    constructor(startLine, startCol, endLine, endCol, expr) {
+        super(startLine, startCol, endLine, endCol);
+        this.expr = expr;
+    }
+}
+
+class ArithmeticExpression extends ASTNode {
+    constructor(startLine, startCol, endLine, endCol, lhs, op, rhs) {
+        super(startLine, startCol, endLine, endCol);
+        this.lhs = lhs;
+        this.op = op;
+        this.rhs = rhs;
     }
 }
 
@@ -81,6 +98,14 @@ export class WhileStatement extends ASTNode {
     }
 }
 
+export class ReturnStatement extends ASTNode {
+    constructor(startLine, startCol, endLine, endCol,
+        expr) {
+        super(startLine, startCol, endLine, endCol);
+        this.expr = expr;
+    }
+}   
+
 let keywords = new Set(['int', 'void', 'if', 'while', 'else', 'return']);
 
 export class Parser {
@@ -107,6 +132,7 @@ export class Parser {
     }
 
     parseFunction() {
+        
         try {
             let retType = this.#expect(new Set(['int', 'void']));
             let token = this.#nextToken();
@@ -183,13 +209,15 @@ export class Parser {
     }
 
     #parseDeclaration() {
+        console.log("parsing declaration");
         let typeToken = this.#expect('int');
         let idToken = this.#nextToken();
         //check the name in a later step
         this.#expect('=');
-        let valueToken = this.#nextToken(); //should be int, check that later
+        let expression = this.#parseExpression(); //should be int, check that later
         let semi = this.#expect(';');
-        return new VarDeclaration(typeToken.line, typeToken.col, semi.line, semi.col, idToken, valueToken);
+        console.log("OK declaration");
+        return new VarDeclaration(typeToken.line, typeToken.col, semi.line, semi.col, idToken, expression);
     }
     #parseIfOrWhileStatement() {
         let keywordToken = this.#expect(new Set(['if', 'while']));
@@ -215,9 +243,38 @@ export class Parser {
         }
 
     }
-    #parseWhileLoop() { }
-    #parseReturnStatement() { }
+
+    #parseReturnStatement() { 
+        let keyword = this.#expect('return');
+        let expr = this.#parseExpression();
+        let semi = this.#expect(';');
+        //todo errors?
+        return new ReturnStatement(keyword.line, keyword.col, semi.line, semi.col, expr);
+
+    }
     #parseAssignmentStatement() { }
+
+    #parseExpression(){
+        //could be a simpleExpression, exp + exp,  exp - exp, -exp
+        let peek = this.#peekToken().value;
+        console.log("parse expression, peeked token: ", peek);
+        if(peek == '-'){
+            let minus = this.#nextToken();
+            let expr = this.#parseExpression();
+            return new NegationExpression(minus.line, minus.col, expr.endLine, expr.endCol, expr);
+        }
+
+        let first = this.#parseSimpleExpression();
+        let next = this.#peekToken().value;
+        if(next == '+' || next == '-'){
+            let op = this.#expect(arithmeticOps);
+            let rhs = this.#parseExpression();
+            return new ArithmeticExpression(first.startLine, first.startCol, rhs.endLine, rhs.endCol, first, op, rhs);
+        } else {
+            return first;
+        }
+
+    }   
 
     //variable or literal
     #parseSimpleExpression(){

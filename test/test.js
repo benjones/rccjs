@@ -148,6 +148,17 @@ test('func with body', ()=>{
         int x = 0;
         if(x < 3){} else {}
         while(3 > x){}
+        return x + 3;
+    }`);
+    let parser = new Parser(lexer);
+    let func = parser.parseFunction();
+    assert(func instanceof FunctionDef);
+    console.log(JSON.stringify(func));
+});
+
+test('func compound expression', ()=>{
+    let lexer = new Lexer(`int func(int x, int y, int z){
+        return x + y + z + 3 + -x;
     }`);
     let parser = new Parser(lexer);
     let func = parser.parseFunction();
