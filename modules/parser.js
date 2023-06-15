@@ -147,8 +147,19 @@ export class Parser {
         return this.#tokens.prev().value;
     }
 
+
+    // ERROR HANDLING/REPORTING
+    /*
+        Current thinking: statement parsers should catch any thrown errors and return them
+        basically propagation stops there and the statment gets parsed as an error
+        parseFunction also wraps stuff in try/catch since it's the entry point so nothing escapes
+        if there are syntax errors in the function itself
+
+        More testing is needed to be sure this is a good idea...
+    */
+
     parseFunction() {
-        
+
         try {
             let retType = this.#expect(new Set(['int', 'void']));
             let token = this.#nextToken();
@@ -225,7 +236,7 @@ export class Parser {
     }
 
     #parseDeclaration() {
-//        console.log("parsing declaration");
+        //        console.log("parsing declaration");
         try {
             let typeToken = this.#expect('int');
             let idToken = this.#nextToken();
@@ -240,51 +251,63 @@ export class Parser {
         }
     }
     #parseIfOrWhileStatement() {
-        let keywordToken = this.#expect(new Set(['if', 'while']));
-        this.#expect('(');
-        let cond = this.#parseCondition();
-        this.#expect(')');
-        this.#expect('{');
-        let body = this.#parseStatements();
-        let closeCurly = this.#expect('}');
-        if(keywordToken.value == 'if'){
-            let elseStatements = [];
-            if(this.#peekToken().value == 'else'){
-                this.#expect('else');
-                this.#expect('{');
-                this.elseStatements = this.#parseStatements();
-                closeCurly = this.#expect('}');
+        try {
+            let keywordToken = this.#expect(new Set(['if', 'while']));
+            this.#expect('(');
+            let cond = this.#parseCondition();
+            this.#expect(')');
+            this.#expect('{');
+            let body = this.#parseStatements();
+            let closeCurly = this.#expect('}');
+            if (keywordToken.value == 'if') {
+                let elseStatements = [];
+                if (this.#peekToken().value == 'else') {
+                    this.#expect('else');
+                    this.#expect('{');
+                    this.elseStatements = this.#parseStatements();
+                    closeCurly = this.#expect('}');
+                }
+                return new IfStatement(keywordToken.line, keywordToken.col, closeCurly.line, closeCurly.col,
+                    cond, body, elseStatements);
+            } else {
+                return new WhileStatement(keywordToken.line, keywordToken.col, closeCurly.line, closeCurly.col,
+                    cond, body);
             }
-            return new IfStatement(keywordToken.line, keywordToken.col, closeCurly.line, closeCurly.col,
-                cond, body, elseStatements);
-        } else {
-            return new WhileStatement(keywordToken.line, keywordToken.col, closeCurly.line, closeCurly.col,
-                cond, body);
+        } catch (parseError) {
+            return parseError;
         }
 
     }
 
-    #parseReturnStatement() { 
-        let keyword = this.#expect('return');
-        let expr = this.#parseExpression();
-        let semi = this.#expect(';');
-        //todo errors?
-        return new ReturnStatement(keyword.line, keyword.col, semi.line, semi.col, expr);
+    #parseReturnStatement() {
+        try {
+            let keyword = this.#expect('return');
+            let expr = this.#parseExpression();
+            let semi = this.#expect(';');
+            //todo errors?
+            return new ReturnStatement(keyword.line, keyword.col, semi.line, semi.col, expr);
+        } catch (parseError) {
+            return parseError;
+        }
 
     }
     #parseAssignmentStatement() {
-        let lhs = this.#nextToken(); //should be a var name
-        this.#expect('=');
-        let rhs = this.#parseExpression();
-        let semi = this.#expect(';');
-        return new AssignmentStatement(lhs.line, lhs.col, semi.line, semi.col, lhs, rhs);
+        try {
+            let lhs = this.#nextToken(); //should be a var name
+            this.#expect('=');
+            let rhs = this.#parseExpression();
+            let semi = this.#expect(';');
+            return new AssignmentStatement(lhs.line, lhs.col, semi.line, semi.col, lhs, rhs);
+        } catch (parseError) {
+            return parseError;
+        }
     }
 
-    #parseExpression(){
+    #parseExpression() {
         //could be a simpleExpression, exp + exp,  exp - exp, -exp
         let peek = this.#peekToken().value;
-//        console.log("parse expression, peeked token: ", peek);
-        if(peek == '-'){
+        //        console.log("parse expression, peeked token: ", peek);
+        if (peek == '-') {
             let minus = this.#nextToken();
             let expr = this.#parseExpression();
             return new NegationExpression(minus.line, minus.col, expr.endLine, expr.endCol, expr);
@@ -292,7 +315,7 @@ export class Parser {
 
         let first = this.#parseSimpleExpression();
         let next = this.#peekToken().value;
-        if(next == '+' || next == '-'){
+        if (next == '+' || next == '-') {
             let op = this.#expect(arithmeticOps);
             let rhs = this.#parseExpression();
             return new ArithmeticExpression(first.startLine, first.startCol, rhs.endLine, rhs.endCol, first, op, rhs);
@@ -300,19 +323,19 @@ export class Parser {
             return first;
         }
 
-    }   
+    }
 
     //variable or literal
-    #parseSimpleExpression(){
+    #parseSimpleExpression() {
         let token = this.#nextToken();
-        if(typeof token.value == 'number'){
-//            console.log("simple expr for ", token.value, " is number");
+        if (typeof token.value == 'number') {
+            //            console.log("simple expr for ", token.value, " is number");
             return new LiteralExpression(token.line, token.col, token.line, token.col + token.value.toString().length,
                 token.value);
-        } else if(validIdentifier(token.value)){
-//            console.log("simple expr for ", token.value, " is identifier");
+        } else if (validIdentifier(token.value)) {
+            //            console.log("simple expr for ", token.value, " is identifier");
             return new VariableExpression(token.line, token.col, token.line, token.col + token.value.length,
-            token.value);
+                token.value);
         } else {
             return new ParseError(token.line, token.col, token.line, token.col + token.value.length,
                 "expecting number or variable");
@@ -320,16 +343,16 @@ export class Parser {
     }
 
     //boolean expression
-    #parseCondition(){
+    #parseCondition() {
         let lhs = this.#parseSimpleExpression();
         let op = this.#nextToken();
         let rhs = this.#parseSimpleExpression();
         //toString because rhs could be a number, if it's a var, it should be a no-op
-        if(!logicOps.has(op.value )){
+        if (!logicOps.has(op.value)) {
             return new ParseError(lhs.startLine, lhs.startCol, rhs.endLine, rhs.endCol,
                 "invalid comparison operator: " + op.value);
         }
-        return new ConditionExpression(lhs.startLine, lhs.startCol, rhs.endLine, rhs.endCol , lhs, op, rhs);
+        return new ConditionExpression(lhs.startLine, lhs.startCol, rhs.endLine, rhs.endCol, lhs, op, rhs);
 
     }
 
@@ -351,18 +374,18 @@ export class Parser {
             let expected = (options instanceof Set) ? "One of " + Array.from(options).map(x => '"' + x.toString() + '"').join(", ") :
                 '"' + options.toString() + '"';
             let got = (token instanceof InvalidToken) ? "Invalid Token: " + token.value : token.value;
-            
+
             let extra = "";
-            if(options == ';' && this.#prevToken.line != token.line){
+            if (options == ';' && this.#prevToken.line != token.line) {
                 extra = "\nMaybe you forgot a semicolon at the end of a line?";
             } else {
                 this.#nextToken();
             }
-            
+
             throw new ParseError(token.line, token.col, token.line, token.col,
                 "expected " + expected + " but got " + got + extra);
-            
-            
+
+
         }
     }
 

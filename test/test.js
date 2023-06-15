@@ -188,10 +188,13 @@ test('func compound expression', ()=>{
 });
 
 //error handling
-test('missing semicolon', ()=>{
+test('missing semicolons', ()=>{
     let parser = new Parser(`int func(int x,){
         int b = 1
         b = b + x;
+        if(b > 0){
+            b = b + 2
+        }
         return b;
     }`);
     let func = parser.parseFunction();
