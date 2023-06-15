@@ -1,17 +1,19 @@
 
 export class Token {
-    constructor(value, line, col) {
+    constructor(value, line, col, index) {
         this.value = value;
         this.line = line;
         this.col = col;
+        this.index = index; //index of last char of this token
     }
 }
 
 export class InvalidToken {
-    constructor(value, line, col) {
+    constructor(value, line, col, index) {
         this.value = value;
         this.line = line;
         this.col = col;
+        this.index = index; //index of last char of this token
     }
 }
 
@@ -30,9 +32,6 @@ export class Lexer {
 
     }
 
-
-
-
     //lex next token
     [Symbol.iterator]() {
         let line = 1;
@@ -47,7 +46,7 @@ export class Lexer {
 
                 let currentChar = () => this.#src[index];
                 let hasMore = () => index < this.#src.length;
-                let token = (value) => new Token(value, line, col);
+                let token = (value) => new Token(value, line, col, index);
 
                 let parseIntLiteral = () => {
                     let startLine = line;
@@ -58,20 +57,19 @@ export class Lexer {
                         index++;
                     }
                     let value = parseInt(this.#src.substring(startIndex, index));
-                    return new Token(value, startLine, startCol);
+                    return new Token(value, startLine, startCol, index -1);
                 }
 
                 let parseWord = () => {
                     let startLine = line;
                     let startCol = col;
                     let startIndex = index;
-                    while(hasMore() && !(whitespace.has(currentChar()) || logicChars.has(currentChar()) ||
-                        delimiters.has(currentChar()) || arithmeticOps.has(currentChar()))){
+                    while(hasMore() && isWordChar(currentChar())){
                         ++col;
                         ++index;
                     }
                     let retVal = this.#src.substring(startIndex, index);
-                    return new Token(retVal, startLine, startCol);
+                    return new Token(retVal, startLine, startCol, index - 1);
                 }
 
                 //skip whitespace
@@ -86,7 +84,7 @@ export class Lexer {
                 if (!hasMore()) {
                     //I think things like Array.from will ignore this since done is true,
                     //but calling next directly lets you inspect it?
-                    return { value: new InvalidToken(EOF, line, col), done: true}
+                    return { value: new InvalidToken(EOF, line, col, index), done: true}
 
                 }
 
@@ -116,12 +114,19 @@ export class Lexer {
                         } //otherwise the single char version
                     }
                     if(retVal == '!'){
-                        return { value: new InvalidToken(retVal, startLine, startCol), done: false}; 
+                        return { value: new InvalidToken(retVal, startLine, startCol, index -1), done: false}; 
                     }
-                    return { value: new Token(retVal, startLine, startCol), done: false};
+                    return { value: new Token(retVal, startLine, startCol, index - 1), done: false};
                     
-                } else {
+                } else if(isWordChar(currentChar())){
                     return {value: parseWord(), done : false};
+                } else {
+                    let ch = currentChar();
+                    let retLine = line;
+                    let retCol = col; 
+                    ++index;
+                    ++col;
+                    return { value: new InvalidToken(ch, retLine, retCol, index -1), done: false};
                 }
             }
         }
@@ -131,4 +136,8 @@ export class Lexer {
 
 function isDigit(ch){
     return (ch >= '0') && (ch <= '9');
+}
+
+function isWordChar(ch){
+    return ((ch >= 'a')  && (ch <= 'z')) || ((ch >= 'A')  && (ch <= 'Z')) || ch == '_' || isDigit(ch);
 }

@@ -1,4 +1,4 @@
-import { arithmeticOps, delimiters, InvalidToken, logicOps } from "./lexer";
+import { arithmeticOps, delimiters, InvalidToken, logicOps, Lexer } from "./lexer";
 import { IterBuffer } from "./iterBuffer";
 
 
@@ -12,35 +12,35 @@ class ASTNode {
     }
 }
 
-class ParseError extends ASTNode {
+export class ParseError extends ASTNode {
     constructor(startLine, startCol, endLine, endCol, reason) {
         super(startLine, startCol, endLine, endCol);
         this.reason = reason;
     }
 }
 
-class LiteralExpression extends ASTNode {
+export class LiteralExpression extends ASTNode {
     constructor(startLine, startCol, endLine, endCol, value) {
         super(startLine, startCol, endLine, endCol);
         this.value = value;
     }
 }
 
-class VariableExpression extends ASTNode {
+export class VariableExpression extends ASTNode {
     constructor(startLine, startCol, endLine, endCol, name) {
         super(startLine, startCol, endLine, endCol);
         this.name = name;
     }
 }
 
-class NegationExpression extends ASTNode {
+export class NegationExpression extends ASTNode {
     constructor(startLine, startCol, endLine, endCol, expr) {
         super(startLine, startCol, endLine, endCol);
         this.expr = expr;
     }
 }
 
-class ArithmeticExpression extends ASTNode {
+export class ArithmeticExpression extends ASTNode {
     constructor(startLine, startCol, endLine, endCol, lhs, op, rhs) {
         super(startLine, startCol, endLine, endCol);
         this.lhs = lhs;
@@ -49,7 +49,7 @@ class ArithmeticExpression extends ASTNode {
     }
 }
 
-class ConditionExpression extends ASTNode {
+export class ConditionExpression extends ASTNode {
     constructor(startLine, startCol, endLine, endCol, lhs, op, rhs) {
         super(startLine, startCol, endLine, endCol);
         this.lhs = lhs;
@@ -119,7 +119,10 @@ let keywords = new Set(['int', 'void', 'if', 'while', 'else', 'return']);
 
 export class Parser {
     #tokens;
-    constructor(lexer) {
+    #input;
+    constructor(input) {
+        this.#input = input;
+        let lexer = new Lexer(input);
         this.#tokens = new IterBuffer(lexer[Symbol.iterator]());
         //        console.log(this.#iter);
     }
@@ -138,6 +141,10 @@ export class Parser {
     //return what will be returned by the next call to next, but don't advance the stream
     #peekToken() {
         return this.#tokens.peek().value;
+    }
+
+    #prevToken() {
+        return this.#tokens.prev().value;
     }
 
     parseFunction() {
@@ -218,15 +225,19 @@ export class Parser {
     }
 
     #parseDeclaration() {
-        console.log("parsing declaration");
-        let typeToken = this.#expect('int');
-        let idToken = this.#nextToken();
-        //check the name in a later step
-        this.#expect('=');
-        let expression = this.#parseSimpleExpression(); //should be int, check that later
-        let semi = this.#expect(';');
-        console.log("OK declaration");
-        return new VarDeclaration(typeToken.line, typeToken.col, semi.line, semi.col, idToken, expression);
+//        console.log("parsing declaration");
+        try {
+            let typeToken = this.#expect('int');
+            let idToken = this.#nextToken();
+            //check the name in a later step
+            this.#expect('=');
+            let expression = this.#parseSimpleExpression(); //should be int, check that later
+            let semi = this.#expect(';');
+
+            return new VarDeclaration(typeToken.line, typeToken.col, semi.line, semi.col, idToken, expression);
+        } catch (parseError) {
+            return parseError;
+        }
     }
     #parseIfOrWhileStatement() {
         let keywordToken = this.#expect(new Set(['if', 'while']));
@@ -272,7 +283,7 @@ export class Parser {
     #parseExpression(){
         //could be a simpleExpression, exp + exp,  exp - exp, -exp
         let peek = this.#peekToken().value;
-        console.log("parse expression, peeked token: ", peek);
+//        console.log("parse expression, peeked token: ", peek);
         if(peek == '-'){
             let minus = this.#nextToken();
             let expr = this.#parseExpression();
@@ -295,11 +306,11 @@ export class Parser {
     #parseSimpleExpression(){
         let token = this.#nextToken();
         if(typeof token.value == 'number'){
-            console.log("simple expr for ", token.value, " is number");
+//            console.log("simple expr for ", token.value, " is number");
             return new LiteralExpression(token.line, token.col, token.line, token.col + token.value.toString().length,
                 token.value);
         } else if(validIdentifier(token.value)){
-            console.log("simple expr for ", token.value, " is identifier");
+//            console.log("simple expr for ", token.value, " is identifier");
             return new VariableExpression(token.line, token.col, token.line, token.col + token.value.length,
             token.value);
         } else {
@@ -331,16 +342,27 @@ export class Parser {
                 return options == val;
             }
         }
-        let token = this.#nextToken();
-        console.log("expecting: ", (options instanceof Set) ? Array.from(options).join(', ') : options);
-        console.log("token.value: ", token.value);
+        let token = this.#peekToken(); //peek here for the ';' heuristic below
+        //console.log("expecting: ", (options instanceof Set) ? Array.from(options).join(', ') : options);
+        //console.log("token.value: ", token.value);
         if (!(token instanceof InvalidToken) && ok(token.value)) {
-            console.log("OK");
-            return token;
+            return this.#nextToken();
         } else {
-            console.log("error");
+            let expected = (options instanceof Set) ? "One of " + Array.from(options).map(x => '"' + x.toString() + '"').join(", ") :
+                '"' + options.toString() + '"';
+            let got = (token instanceof InvalidToken) ? "Invalid Token: " + token.value : token.value;
+            
+            let extra = "";
+            if(options == ';' && this.#prevToken.line != token.line){
+                extra = "\nMaybe you forgot a semicolon at the end of a line?";
+            } else {
+                this.#nextToken();
+            }
+            
             throw new ParseError(token.line, token.col, token.line, token.col,
-                "expected one of" + Array.from(options).join(" ") + " but got invalid token: " + token.value);
+                "expected " + expected + " but got " + got + extra);
+            
+            
         }
     }
 

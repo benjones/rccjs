@@ -4,6 +4,7 @@
 export class IterBuffer {
     #it;
     #buf = [];
+    #mostRecent;
     constructor(iterator){
         this.#it = iterator;
     }
@@ -11,9 +12,11 @@ export class IterBuffer {
     next(){
         //print("next, buf: ", this.#buf.map(x => x.value.value).join(' '));
         if(this.#buf.length == 0){
-            return this.#it.next();
+            this.#mostRecent = this.#it.next();
+            return this.#mostRecent;
         } else {
-            return this.#buf.shift();
+            this.#mostRecent = this.#buf.shift();
+            return  this.#mostRecent;
         }   
     }
 
@@ -24,5 +27,10 @@ export class IterBuffer {
             //print("was empty, justpushed: ", this.#buf.map(x => x.value.value).join(' '));
         }
         return this.#buf[0];
+    }
+
+    //token returned by the last call to next()
+    prev(){
+        return this.#mostRecent;
     }
 }

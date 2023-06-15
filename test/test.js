@@ -2,7 +2,7 @@
 //or with a commandline runner: brew install v8; d8 --module test.js
 
 import {Token, InvalidToken, Lexer} from '../modules/lexer.js';
-import {FunctionDef, Parser} from '../modules/parser.js';
+import {ArithmeticExpression, AssignmentStatement, FunctionDef, IfStatement, Parser, ReturnStatement, VarDeclaration, WhileStatement} from '../modules/parser.js';
 function test(name, code){
     try {
         console.log('running ', name);
@@ -28,6 +28,8 @@ function arraysEqual(a, b){
     return true;
 }
 
+
+/****** LEXER TESTS *****/
 
 test('lexing delimiters', ()=>{
     let lexer = new Lexer(`{(}   
@@ -87,9 +89,6 @@ test('logic ops', () => {
 test('words', () => {
     let lexer = new Lexer(`void int hello while
     if else`); //'!' is invalid token
-    // for(let token of lexer){
-    //     console.log(token);
-    // }
     let tokens = Array.from(lexer);
     let values = tokens.map(x => x.value);
     assert(arraysEqual(values, ['void', 'int', 'hello', 'while',
@@ -110,60 +109,92 @@ test('mixed lexing', () => {
         int z = 3;
         int y = 5;
         return y+z;
-    }`); //'!' is invalid token
-    // for(let token of lexer){
-    //     console.log(token);
-    // }
+    }`); 
     let tokens = Array.from(lexer);
     let values = tokens.map(x => x.value);
-    console.log(values.join(' '));
     assert(arraysEqual(values, ['void', 'function', '(', 'int', 'x', ',',
     'int', 'y', ')', '{', 'int', 'z', '=', 3, ';', 'int', 'y', '=', 5, ';',
     'return', 'y', '+', 'z', ';', '}']));
 
 });
 
+/***** PARSER TESTS *****/
 
 test('empty function def', ()=>{
-    let lexer = new Lexer(`int aName(){
+    let parser = new Parser(`int aName(){
     }`);
-    let parser = new Parser(lexer);
     let func = parser.parseFunction();
     assert(func instanceof FunctionDef);
-    console.log(JSON.stringify(func));
+    //console.log(JSON.stringify(func));
+    assert(func.name == 'aName');
+    assert(func.parameters.length == 0);
+    assert(func.body.length == 0);
 });
 
 test('func with parameters', ()=>{
-    let lexer = new Lexer(`int aName(int x,
+    let parser = new Parser(`int aName(int x,
         int y, int z){
     }`);
-    let parser = new Parser(lexer);
     let func = parser.parseFunction();
     assert(func instanceof FunctionDef);
-    console.log(JSON.stringify(func));
+    //console.log(JSON.stringify(func));
+    assert(func.name == 'aName');
+    assert(func.parameters.length == 3);
+    assert(func.body.length == 0);
+    assert(arraysEqual(func.parameters.map(x => x.value) , ['x', 'y', 'z']));
 });
 
 test('func with body', ()=>{
-    let lexer = new Lexer(`int aName(){
+    let parser = new Parser(`int aName(){
         int x = 0;
         if(x < 3){} else {}
         while(3 > x){}
         return x + 3;
     }`);
-    let parser = new Parser(lexer);
     let func = parser.parseFunction();
     assert(func instanceof FunctionDef);
-    console.log(JSON.stringify(func));
+    //console.log(JSON.stringify(func));
+    assert(func.name == 'aName');
+    assert(func.parameters.length == 0);
+    assert(func.body.length == 4);
+    assert(func.body[0] instanceof VarDeclaration);
+    assert(func.body[1] instanceof IfStatement);
+    assert(func.body[2] instanceof WhileStatement);
+    assert(func.body[3] instanceof ReturnStatement);
 });
 
 test('func compound expression', ()=>{
-    let lexer = new Lexer(`int func(int x, int y, int z){
+    let parser = new Parser(`int func(int x, int y, int z){
         int b = 1;
         b = b + x + y;
         return x + y + z + 3 + -b;
     }`);
-    let parser = new Parser(lexer);
     let func = parser.parseFunction();
     assert(func instanceof FunctionDef);
+    //console.log(JSON.stringify(func));
+    assert(func.name == 'func');
+    assert(func.parameters.length == 3);
+    assert(func.body.length == 3);
+    assert(func.body[0] instanceof VarDeclaration);
+    assert(func.body[1] instanceof AssignmentStatement);
+    assert(func.body[2] instanceof ReturnStatement);
+    assert(func.body[1].lhs.value == 'b');
+    assert(func.body[1].expr.lhs.name == 'b');
+    assert(func.body[1].expr.op.value == '+');
+    assert(func.body[1].expr.rhs instanceof ArithmeticExpression);
+    
+    //not testing EVERYTHING, but a pretty good subset here
+    
+});
+
+//error handling
+test('missing semicolon', ()=>{
+    let parser = new Parser(`int func(int x,){
+        int b = 1
+        b = b + x;
+        return b;
+    }`);
+    let func = parser.parseFunction();
     console.log(JSON.stringify(func));
 });
+
