@@ -201,3 +201,12 @@ test('missing semicolons', ()=>{
     console.log(JSON.stringify(func));
 });
 
+test('invalid tokens', () =>{
+    let parser = new Parser(`int func(int x,){
+        int b = 3;
+        b = b * 4;
+    }`);
+    let func = parser.parseFunction();
+    console.log(JSON.stringify(func));
+});
+

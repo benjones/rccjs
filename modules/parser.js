@@ -1,4 +1,4 @@
-import { arithmeticOps, delimiters, InvalidToken, logicOps, Lexer } from "./lexer";
+import { arithmeticOps, delimiters, InvalidToken, logicOps, Lexer, EOF } from "./lexer";
 import { IterBuffer } from "./iterBuffer";
 
 
@@ -147,6 +147,10 @@ export class Parser {
         return this.#tokens.prev().value;
     }
 
+    #hasMoreTokens() {
+        return this.#peekToken().value != EOF;
+    }
+
 
     // ERROR HANDLING/REPORTING
     /*
@@ -186,7 +190,7 @@ export class Parser {
         this.#expect('(');
         let parameters = [];
         //console.log("peeking for params: ", this.#peekToken().value);
-        while (this.#peekToken().value != ')') {
+        while (this.#hasMoreTokens() && this.#peekToken().value != ')') {
             //parse parameters
             this.#expect('int');
             let idTok = this.#nextToken();
@@ -202,7 +206,7 @@ export class Parser {
             //but keep the whole token for future error reporting on name reuse
             parameters.push(idTok);
 
-            if (this.#peekToken().value == ',') {
+            if (this.#peekToken().value == ',') { //TODO, THIS ALLOWS TRAILING ,
                 this.#nextToken();
             } else if (this.#peekToken().value != ')') {
                 let next = this.#nextToken();
@@ -220,7 +224,8 @@ export class Parser {
     #parseStatements() {
         let statements = [];
         //console.log("peeking for params: ", this.#peekToken().value);
-        while (this.#peekToken().value != '}') {
+        while (this.#hasMoreTokens() && this.#peekToken().value != '}') {
+            console.log("parsing next statement, so far: ", statements.length);
             let peeked = this.#peekToken().value;
             if (peeked == 'int') {
                 statements.push(this.#parseDeclaration());
@@ -232,6 +237,8 @@ export class Parser {
                 statements.push(this.#parseAssignmentStatement());
             }
         }
+        console.log("returning ", statements.length, " statements");
+        console.log(JSON.stringify(statements));
         return statements;
     }
 
@@ -373,7 +380,9 @@ export class Parser {
         } else {
             let expected = (options instanceof Set) ? "One of " + Array.from(options).map(x => '"' + x.toString() + '"').join(", ") :
                 '"' + options.toString() + '"';
-            let got = (token instanceof InvalidToken) ? "Invalid Token: " + token.value : token.value;
+            let got = (token instanceof InvalidToken) 
+                ? (token.value == EOF ? "end of file" : "Invalid Token: " + token.value )
+                : token.value;
 
             let extra = "";
             if (options == ';' && this.#prevToken.line != token.line) {
