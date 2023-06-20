@@ -3,6 +3,8 @@
 
 import {Token, InvalidToken, Lexer} from '../modules/lexer.js';
 import {ArithmeticExpression, AssignmentStatement, FunctionDef, IfStatement, Parser, ReturnStatement, VarDeclaration, WhileStatement} from '../modules/parser.js';
+import { analyze } from '../modules/semantic.js';
+
 function test(name, code){
     try {
         console.log('running ', name);
@@ -210,3 +212,63 @@ test('invalid tokens', () =>{
     console.log(JSON.stringify(func));
 });
 
+
+
+/****** analysis tests *****/
+
+test('basic analysis with errors', () => {
+    let parser = new Parser(`int func(int x, int y){
+        int z = 3;
+        x = y + z + 3;
+        q = 3;
+        y = x - 3;
+        z = x + a;
+    }`);
+    let func = parser.parseFunction();
+    let ret = analyze(func);
+    console.log(ret.scope.toString());
+    console.log(JSON.stringify(ret.errors));
+    assert(ret.errors.length == 2);
+    assert(ret.errors[0].startLine == 4);
+    assert(ret.errors[1].startLine == 6);
+});
+
+test('analysis including if/while', () => {
+    let parser = new Parser(`int func(int x, int y){
+        while(x > 0){
+            x = x - 1;
+        }
+        if(y > 1){
+            y = y + x;
+        }
+        return y;
+    }`);
+    let func = parser.parseFunction();
+    let ret = analyze(func);
+    console.log(ret.scope.toString());
+    console.log(JSON.stringify(ret.errors));
+});
+
+
+test('analyze nested scopes', () => {
+    let parser = new Parser(`int func(int x, int y){
+        int q = 2;
+        if(x > 0){
+            int z = 3;
+            x = y + z;
+        } else {
+            int z = 1;
+            x = y - z;
+            int q = 2;
+        }
+
+        while(q > 0){
+            q = q - 1;
+        }
+        return x;
+    }`);
+    let func = parser.parseFunction();
+    let ret = analyze(func);
+    console.log(ret.scope.toString());
+    console.log(JSON.stringify(ret.errors));
+});

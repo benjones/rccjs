@@ -1,9 +1,9 @@
-import { arithmeticOps, delimiters, InvalidToken, logicOps, Lexer, EOF } from "./lexer";
-import { IterBuffer } from "./iterBuffer";
+import { arithmeticOps, delimiters, InvalidToken, logicOps, Lexer, EOF } from "./lexer.js";
+import { IterBuffer } from "./iterBuffer.js";
 
 
 //syntax elements
-class ASTNode {
+export class ASTNode {
     constructor(startLine, startCol, endLine, endCol) {
         this.startLine = startLine;
         this.startCol = startCol;
@@ -271,7 +271,7 @@ export class Parser {
                 if (this.#peekToken().value == 'else') {
                     this.#expect('else');
                     this.#expect('{');
-                    this.elseStatements = this.#parseStatements();
+                    elseStatements = this.#parseStatements();
                     closeCurly = this.#expect('}');
                 }
                 return new IfStatement(keywordToken.line, keywordToken.col, closeCurly.line, closeCurly.col,
@@ -400,7 +400,7 @@ export class Parser {
 
 }
 
-function validIdentifier(name) {
+export function validIdentifier(name) {
     return !((delimiters.has(name) || arithmeticOps.has(name) ||
         logicOps.has(name) || keywords.has(name) || typeof name == 'number'));
 }
