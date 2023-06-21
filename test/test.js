@@ -280,7 +280,10 @@ test('basic assembly test', () => {
     let parser = new Parser(`int func(int x, int y){
         int z = 3;
         x = 2;
-        return 2;
+        y = x + z;
+        x = y - 2;
+        x = -x;
+        return x;
     }`);
     let func = parser.parseFunction();
     console.log(JSON.stringify(func));
