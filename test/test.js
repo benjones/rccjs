@@ -4,6 +4,7 @@
 import {Token, InvalidToken, Lexer} from '../modules/lexer.js';
 import {ArithmeticExpression, AssignmentStatement, FunctionDef, IfStatement, Parser, ReturnStatement, VarDeclaration, WhileStatement} from '../modules/parser.js';
 import { analyze } from '../modules/semantic.js';
+import { assemble } from '../modules/backend.js';
 
 function test(name, code){
     try {
@@ -271,4 +272,21 @@ test('analyze nested scopes', () => {
     let ret = analyze(func);
     console.log(ret.scope.toString());
     console.log(JSON.stringify(ret.errors));
+});
+
+/***** ASSEMBLY TESTS ******/
+
+test('basic assembly test', () => {
+    let parser = new Parser(`int func(int x, int y){
+        int z = 3;
+        x = 2;
+        return 2;
+    }`);
+    let func = parser.parseFunction();
+    console.log(JSON.stringify(func));
+    let ret = analyze(func);
+    assert(ret.errors.length == 0);
+    let asm = assemble(func);
+    console.log("asm:");
+    console.log(asm);
 });
