@@ -291,7 +291,7 @@ test('basic assembly test', () => {
     assert(ret.errors.length == 0);
     let asm = assemble(func);
     console.log("asm:");
-    console.log(asm);
+    console.log(asm.toString());
 });
 
 test('if statement combos', () => {
@@ -326,7 +326,7 @@ test('if statement combos', () => {
     assert(ret.errors.length == 0);
     let asm = assemble(func);
     console.log("asm:");
-    console.log(asm);
+    console.log(asm.toString());
 });
 
 test('while loop types', () => {
@@ -357,7 +357,7 @@ test('while loop types', () => {
     assert(ret.errors.length == 0);
     let asm = assemble(func);
     console.log("asm:");
-    console.log(asm);
+    console.log(asm.toString());
 
 });
 
@@ -378,7 +378,7 @@ test('test nesting', () => {
     assert(ret.errors.length == 0);
     let asm = assemble(func);
     console.log("asm:");
-    console.log(asm);
+    console.log(asm.toString());
 
 });
 
