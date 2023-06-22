@@ -18,32 +18,31 @@ bgt L             // if in the previous instruction the first operand is greater
 bne L             // if in the previous instruction the first and second operand are unequal, 
                   // execute the instruction at label L next
 ***/
+const r0 = 'r0';
+const r1 = 'r1';
+
 class Instruction {
     label;
-    code;
+    op;
+    args;
+
+    constructor(label, op, args){
+        this.label = label;
+        this.op = op;
+        this.args = args;
+    }
 
     toString() {
-        return `${this.label ? this.label + ": " : ""}${this.code ? this.code : ""}`;
+        return `${this.label ? this.label + ": " : ""}${this.op} ${this.args.join(', ')}`;
     }
 }
 
-function labeledInstruction(label, code) {
-    let ret = new Instruction();
-    ret.label = label;
-    ret.code = code;
-    return ret;
-}
-
 function codeLabel(label) {
-    let ret = new Instruction();
-    ret.label = label;
-    return ret;
+    return new Instruction(label, "", []);
 }
 
-function instruction(code) {
-    let ret = new Instruction();
-    ret.code = code;
-    return ret;
+function instruction(op, args) {
+    return new Instruction("", op, args);
 }
 
 const resLabel = '_RES';
@@ -145,20 +144,20 @@ function assembleExpression(expr, instructions, variables) {
         let lhs = assembleExpression(expr.lhs, instructions, variables);
         let rhs = assembleExpression(expr.rhs, instructions, variables);
         instructions.push(...[
-            instruction(`load ${lhs} r0`),
-            instruction(`load ${rhs} r1`),
-            instruction(`${expr.op.value == '+' ? 'add' : 'sub'} r0 r1 r0`),
-            instruction(`store r0 ${tmp}`)
+            instruction('load',[lhs, r0]),
+            instruction('load',[rhs, r1]),
+            instruction(expr.op.value == '+' ? 'add' : 'sub', [ r0, r1, r0]),
+            instruction('store', [r0, tmp])
         ]);
         return tmp;
     } else if (expr instanceof NegationExpression) {
         let child = assembleExpression(expr.expr, instructions, variables);
         let tmp = variables.getTemporary();
         instructions.push(...[
-            instruction(`load ${child} r0`),
-            instruction(`clear r1`),
-            instruction(`sub r1 r0 r0`),
-            instruction(`store r0 ${tmp}`)
+            instruction('load',[child, r0]),
+            instruction('clear', [r1]),
+            instruction('sub', [r1, r0, r0]),
+            instruction('store', [r0, tmp])
         ]);
         return tmp;
     } else {
@@ -180,25 +179,25 @@ function assembleIfStatement(statement, instructions, variables){
     let [then, else_, done] = variables.getIfLabels();
 
     instructions.push(...[
-        instruction(`load ${lhs} r0`),
-        instruction(`load ${rhs} r1`)
+        instruction('load', [lhs, r0]),
+        instruction('load', [rhs, r1])
     ]);
 
     switch (statement.cond.op.value) {
         case '==':
             instructions.push(...[
-                instruction('cmp r0 r1'),
-                instruction(`bne ${else_}`)
+                instruction('cmp', [r0, r1]),
+                instruction('bne', [else_])
             ]);
             assembleStatements(statement.thenStatements, instructions, variables);
-            instructions.push(instruction(`jump ${done}`));
+            instructions.push(instruction('jump', [done]));
             instructions.push(codeLabel(else_));
             assembleStatements(statement.elseStatements, instructions, variables);
             instructions.push(codeLabel(done));
             break;
 
         case '!=':
-
+            break;
     }
 
 
@@ -207,7 +206,7 @@ function assembleIfStatement(statement, instructions, variables){
 //copy 1 memory value to another, using R0 as a temporary
 function memCopy(src, dst) {
     return [
-        instruction(`load ${src} r0`),
-        instruction(`store r0 ${dst}`)
+        instruction('load', [src, r0]),
+        instruction('store', [r0, dst])
     ];
 }
