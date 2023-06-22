@@ -294,7 +294,7 @@ test('basic assembly test', () => {
     console.log(asm);
 });
 
-test('simple branching', () => {
+test('if statement combos', () => {
     let parser = new Parser(`int func(int x, int y){
         if(x == y){
             x = x + 1;
@@ -328,3 +328,59 @@ test('simple branching', () => {
     console.log("asm:");
     console.log(asm);
 });
+
+test('while loop types', () => {
+    let parser = new Parser(`int func(int x, int y){
+        while( x == y) {
+            x = x + 1;
+        }
+        while( x != y){
+            x = x - 1;
+        }
+        while(x > y){
+            x = x - 1;
+        }
+        while(x < y){
+            x = x + 1;
+        }
+        while(x >= y){
+            x = x - 1;
+        }
+        while(x <= y){
+            x = x + 1;
+        }
+        return x;
+    }`);
+    let func = parser.parseFunction();
+    console.log(JSON.stringify(func));
+    let ret = analyze(func);
+    assert(ret.errors.length == 0);
+    let asm = assemble(func);
+    console.log("asm:");
+    console.log(asm);
+
+});
+
+
+test('test nesting', () => {
+    let parser = new Parser(`int func(int x, int y){
+        if(x < y){
+            int i = 0;
+            while(i < 3){
+                x = x + 1;
+            }
+        }
+        return x;
+    }`);
+    let func = parser.parseFunction();
+    console.log(JSON.stringify(func));
+    let ret = analyze(func);
+    assert(ret.errors.length == 0);
+    let asm = assemble(func);
+    console.log("asm:");
+    console.log(asm);
+
+});
+
+//todo while loop with conditions like (x + 1 ) < (y + 2)
+//to make sure those are recomputed on each iteration

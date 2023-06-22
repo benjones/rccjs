@@ -26,7 +26,7 @@ class Instruction {
     op;
     args;
 
-    constructor(label, op, args){
+    constructor(label, op, args) {
         this.label = label;
         this.op = op;
         this.args = args;
@@ -73,6 +73,12 @@ class Variables {
         return ['THEN', 'ELSE', 'DONE'].map(x => base + x);
     }
 
+    getWhileLabels() {
+        let base = `_WHILE_${this.#cfTemps}_`;
+        ++this.#cfTemps;
+        return ['TEST', 'BODY', 'DONE'].map(x => base + x);
+    }
+
     toString() {
         return [...this.#map].map(kv => `${kv[0]}: ${kv[1]}`).join('\n');
     }
@@ -111,7 +117,7 @@ function assembleStatements(statements, instructions, variables) {
         } else if (statement instanceof IfStatement) {
             assembleIfStatement(statement, instructions, variables);
         } else if (statement instanceof WhileStatement) {
-
+            assembleWhileStatement(statement, instructions, variables);
         } else if (statement instanceof AssignmentStatement) {
             console.log("assignment statement: ", JSON.stringify(statement));
             let rhs = assembleExpression(statement.expr, instructions, variables);
@@ -144,9 +150,9 @@ function assembleExpression(expr, instructions, variables) {
         let lhs = assembleExpression(expr.lhs, instructions, variables);
         let rhs = assembleExpression(expr.rhs, instructions, variables);
         instructions.push(...[
-            instruction('load',[lhs, r0]),
-            instruction('load',[rhs, r1]),
-            instruction(expr.op.value == '+' ? 'add' : 'sub', [ r0, r1, r0]),
+            instruction('load', [lhs, r0]),
+            instruction('load', [rhs, r1]),
+            instruction(expr.op.value == '+' ? 'add' : 'sub', [r0, r1, r0]),
             instruction('store', [r0, tmp])
         ]);
         return tmp;
@@ -154,7 +160,7 @@ function assembleExpression(expr, instructions, variables) {
         let child = assembleExpression(expr.expr, instructions, variables);
         let tmp = variables.getTemporary();
         instructions.push(...[
-            instruction('load',[child, r0]),
+            instruction('load', [child, r0]),
             instruction('clear', [r1]),
             instruction('sub', [r1, r0, r0]),
             instruction('store', [r0, tmp])
@@ -165,14 +171,8 @@ function assembleExpression(expr, instructions, variables) {
     }
 }
 
-function assembleIfStatement(statement, instructions, variables){
-    //condition -> asm 
-    // == -> cmp.   bne-> else
-    // != -> cmp, bne then ... jump done
-    // l < r -> cmp r l bgt then, 
-    // l > r -> cmp l r bgt then
-    // if (x <= y) { then} else { /* x > y*/ eb}
-    // so rewrite as if( x > y){ eb } else { then }
+function assembleIfStatement(statement, instructions, variables) {
+
     console.log("assembling if: ", JSON.stringify(statement));
     let lhs = assembleExpression(statement.cond.lhs, instructions, variables);
     let rhs = assembleExpression(statement.cond.rhs, instructions, variables);
@@ -186,21 +186,34 @@ function assembleIfStatement(statement, instructions, variables){
     //all variants will be:
     //comparison, conditional jump, fallthrough statements, jump to label
     //label, conditional jump statements, done label
-    //TODO THOROUGH TESTING HERE!!!
+    //These are all tested in the 'if statement combos' test,
+    //but no automated checking, just manual inspection...
     let table = {
-        '==': { cmp: [instruction('cmp', [r0, r1]), instruction('bne', [else_])],
-            fallthrough: statement.thenStatements, label: else_, cjs: statement.elseStatements},
-        '!=': { cmp: [instruction('cmp', [r0, r1]), instruction('bne', [then])],
-            fallthrough: statement.elseStatements, label: then, cjs: statement.thenStatements},
-        '<' : {cmp: [instruction('cmp', [r1, r0]), instruction('bgt', [then])],
-        fallthrough: statement.elseStatements, label: then, cjs: statement.thenStatements},
-        '>' : {cmp: [instruction('cmp', [r0, r1]), instruction('bgt', [then])],
-        fallthrough: statement.elseStatements, label: then, cjs: statement.thenStatements},
-        '<=': {cmp: [instruction('cmp', [r0, r1]), instruction('bgt', [else_])],
-        fallthrough: statement.thenStatements, label: else_, cjs: statement.elseStatements},
-            // if( l >= r) { then } else { l < r  === r > l }
-        '>=': {cmp: [instruction('cmp', [r1, r0]), instruction('bgt', [else_])],
-        fallthrough: statement.thenStatements, label: else_, cjs: statement.elseStatements}     
+        '==': {
+            cmp: [instruction('cmp', [r0, r1]), instruction('bne', [else_])],
+            fallthrough: statement.thenStatements, label: else_, cjs: statement.elseStatements
+        },
+        '!=': {
+            cmp: [instruction('cmp', [r0, r1]), instruction('bne', [then])],
+            fallthrough: statement.elseStatements, label: then, cjs: statement.thenStatements
+        },
+        '<': {
+            cmp: [instruction('cmp', [r1, r0]), instruction('bgt', [then])],
+            fallthrough: statement.elseStatements, label: then, cjs: statement.thenStatements
+        },
+        '>': {
+            cmp: [instruction('cmp', [r0, r1]), instruction('bgt', [then])],
+            fallthrough: statement.elseStatements, label: then, cjs: statement.thenStatements
+        },
+        '<=': {
+            cmp: [instruction('cmp', [r0, r1]), instruction('bgt', [else_])],
+            fallthrough: statement.thenStatements, label: else_, cjs: statement.elseStatements
+        },
+        // if( l >= r) { then } else { l < r  === r > l }
+        '>=': {
+            cmp: [instruction('cmp', [r1, r0]), instruction('bgt', [else_])],
+            fallthrough: statement.thenStatements, label: else_, cjs: statement.elseStatements
+        }
     }
 
 
@@ -212,6 +225,75 @@ function assembleIfStatement(statement, instructions, variables){
     instructions.push(codeLabel(pattern.label));
     assembleStatements(pattern.cjs, instructions, variables);
     instructions.push(codeLabel(done));
+
+}
+
+//all conditions show up in 
+//'while loop types' tests, but just inspected, not asserted
+function assembleWhileStatement(statement, instructions, variables){
+
+    //depending on condition we might be able to conditionally
+    //jump to done, or we may have to have a conditional jump to body and
+    //a fallthrough jump to done.
+    let [test, body, done] = variables.getWhileLabels();
+    instructions.push(codeLabel(test));
+    let lhs = assembleExpression(statement.cond.lhs, instructions, variables);
+    let rhs = assembleExpression(statement.cond.rhs, instructions, variables);
+
+
+
+
+    instructions.push(...[
+        instruction('load', [lhs, r0]),
+        instruction('load', [rhs, r1])
+    ]);
+    switch (statement.cond.op.value) {
+        case '==':
+            instructions.push(...[
+                instruction('cmp', [r0, r1]),
+                instruction('bne', [done])
+            ]);
+            break;
+        case '!=':
+            instructions.push(...[
+                instruction('cmp', [r0, r1]),
+                instruction('bne', [body]),
+                instruction('jump', [done]),
+                codeLabel(body)
+            ]);
+            break;
+        case '<':
+            instructions.push(...[
+                instruction('cmp', [r1, r0]),
+                instruction('bgt', [body]),
+                instruction('jump', [done]),
+                codeLabel(body)
+            ]);
+            break;
+        case '>':
+            instructions.push(...[
+                instruction('cmp', [r0, r1]),
+                instruction('bgt', [body]),
+                instruction('jump', [done]),
+                codeLabel(body)
+            ]);
+            break;
+        case '<=':
+            instructions.push(...[
+                instruction('cmp', [r0, r1]),
+                instruction('bgt', [done]),
+            ]);
+            break;
+        case '>=':
+            instructions.push(...[
+                instruction('cmp', [r1, r0]),
+                instruction('bgt', [done]),
+            ]);
+            break;
+    }
+
+    assembleStatements(statement.body, instructions, variables);
+    instructions.push(...[instruction('jump', [test]), codeLabel(done)]);
 
 }
 
