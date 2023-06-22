@@ -384,3 +384,26 @@ test('test nesting', () => {
 
 //todo while loop with conditions like (x + 1 ) < (y + 2)
 //to make sure those are recomputed on each iteration
+
+//optimizer tests
+
+test('basic optimizer test', () => {
+    let parser = new Parser(`int func(int x, int y){
+        int z = 3;
+        x = 2;
+        y = x + z;
+        x = 2 - y;
+        x = -x;
+        return x;
+    }`);
+    let func = parser.parseFunction();
+    console.log(JSON.stringify(func));
+    let ret = analyze(func);
+    assert(ret.errors.length == 0);
+    let asm = assemble(func);
+    console.log("asm:");
+    console.log(asm.toString());
+    asm.optimize();
+    console.log("\nafter optimizing");
+    console.log(asm.toString());
+});

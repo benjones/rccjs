@@ -108,11 +108,22 @@ class Assembly {
     variables = new Variables();
     instructions = [];
 
-    toString(){
+    toString() {
         let ret = this.instructions.map(x => x.toString()).join('\n');
         ret += "\n\n";
         ret += this.variables.toString();
         return ret;
+    }
+
+    optimize() {
+        let done = false;
+        while (!done) {
+            let oldLength = this.instructions.length;
+
+            this.optimizeSpills();
+
+            done = oldLength == this.instructions.length;
+        }
     }
 
     setVar(label, val) {
@@ -309,6 +320,80 @@ class Assembly {
 
     }
 
+    //remove unnecessary load/store operations
+    optimizeSpills() {
+        for (let i = 0; i < this.instructions.length - 1; i++) {
+            let curr = this.instructions[i];
+            let next = this.instructions[i + 1];
+            if (curr.op == 'store' && next.op == 'load' &&
+                curr.args[1] == next.args[0]) { //load/store to same address
+
+                //guaranteed we have a dead load
+                //not necessarily a dead store though
+
+                //dead store if there is another load from that label
+                //without another store to it first
+                //so we can eliminate if we either find a store to that label
+                //or end of instructions, but this must be control-flow aware...
+                //conservative hack: if we hit a jump, assume that it's NOT a dead store
+
+                //another idea: store locations of each label and use that somehow?
+                //another idea: any __temp_ var will never be re-used, so all stores to temps
+                //can be eliminated.  Is that true?
+                //a temporary is returned from assembling arithmetic expressions
+                //Looking through the code paths, temporaries are always
+                //immediately loaded, we can always remove spills to temps safely
+
+                //this is O(N^2) worst case since checking for dead stores for non-temps
+                //can potentially look at the rest of the program
+                //probably fine for CS1810 though...
+                if (isTemporaryLabel(curr.args[1]) || this.#deadStore(i)) {
+
+
+                    if (curr.args[0] == next.args[1]) { //load/store to the same reg, no op
+                        curr.op = 'nop';
+                        next.op = 'nop';
+                    } else {
+                        //turn this into a move
+                        curr.op = 'and';
+                        curr.args = [curr.agrs[0], curr.args[0], next.args[1]];
+                        next.op = 'nop';
+                    }
+                }
+            }
+        }
+        this.instructions = this.instructions.filter(x => x.op != 'nop');
+    }
+
+    //is the store here dead?
+    //we'll do a conservative check
+    //by looking at subsequent instructions until we find a jump (and assume it's live)
+    //a load (we know it's live)
+    //or by hitting the end or another store to that address (and know it's dead)
+    #deadStore(index) {
+        let label = this.instructions[index].args[1];
+        console.log(`is store to ${label} on line ${index} dead?`);
+        //the next instruction is a load of this label, which is why we're considering
+        //checking for a dead store.  Ignore that instruction
+        for (let i = index + 2; i < this.instructions.length; i++) {
+            let inst = this.instructions[i];
+            if (inst.op == 'bne' || inst.op == 'bgt' || inst.op == 'jump') {
+                console.log("no because of branch at", i);
+                return false;
+            }
+            if (inst.op == 'load' && inst.args[0] == label) {
+                console.log("no because of load from it at", i);
+                return false;
+            }
+            if (inst.op == 'store' && inst.args[1] == label) {
+                console.log("yes because we store to it at ", i);
+                return true;
+            }
+        }
+        console.log("yes because we hit EOF");
+        return true;
+    }
+
 }
 
 //copy 1 memory value to another, using R0 as a temporary
@@ -318,3 +403,9 @@ function memCopy(src, dst) {
         instruction('store', [r0, dst])
     ];
 }
+
+function isTemporaryLabel(label) {
+    let re = /_TEMP_\d+/;
+    return re.test(label);
+}
+
