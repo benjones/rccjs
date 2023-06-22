@@ -293,3 +293,19 @@ test('basic assembly test', () => {
     console.log("asm:");
     console.log(asm);
 });
+
+test('simple branching', () => {
+    let parser = new Parser(`int func(int x, int y){
+        if(x == y){
+            x = x + 1;
+        }
+        return x;
+    }`);
+    let func = parser.parseFunction();
+    console.log(JSON.stringify(func));
+    let ret = analyze(func);
+    assert(ret.errors.length == 0);
+    let asm = assemble(func);
+    console.log("asm:");
+    console.log(asm);
+});
