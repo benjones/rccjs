@@ -299,7 +299,26 @@ test('simple branching', () => {
         if(x == y){
             x = x + 1;
         }
-        return x;
+
+        int z = 2;
+        if(z != x){
+            y = 3;
+        } else {
+            y = 4;
+        }
+        if(x < y){
+            x = 5;
+        }
+        if(x > y){
+            x = 6;
+        }
+        if(x <= y){
+            x = 7;
+        }
+        if(x >= y){
+            x = 8;
+        }
+        return x + y;
     }`);
     let func = parser.parseFunction();
     console.log(JSON.stringify(func));

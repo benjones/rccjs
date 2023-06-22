@@ -183,23 +183,35 @@ function assembleIfStatement(statement, instructions, variables){
         instruction('load', [rhs, r1])
     ]);
 
-    switch (statement.cond.op.value) {
-        case '==':
-            instructions.push(...[
-                instruction('cmp', [r0, r1]),
-                instruction('bne', [else_])
-            ]);
-            assembleStatements(statement.thenStatements, instructions, variables);
-            instructions.push(instruction('jump', [done]));
-            instructions.push(codeLabel(else_));
-            assembleStatements(statement.elseStatements, instructions, variables);
-            instructions.push(codeLabel(done));
-            break;
-
-        case '!=':
-            break;
+    //all variants will be:
+    //comparison, conditional jump, fallthrough statements, jump to label
+    //label, conditional jump statements, done label
+    //TODO THOROUGH TESTING HERE!!!
+    let table = {
+        '==': { cmp: [instruction('cmp', [r0, r1]), instruction('bne', [else_])],
+            fallthrough: statement.thenStatements, label: else_, cjs: statement.elseStatements},
+        '!=': { cmp: [instruction('cmp', [r0, r1]), instruction('bne', [then])],
+            fallthrough: statement.elseStatements, label: then, cjs: statement.thenStatements},
+        '<' : {cmp: [instruction('cmp', [r1, r0]), instruction('bgt', [then])],
+        fallthrough: statement.elseStatements, label: then, cjs: statement.thenStatements},
+        '>' : {cmp: [instruction('cmp', [r0, r1]), instruction('bgt', [then])],
+        fallthrough: statement.elseStatements, label: then, cjs: statement.thenStatements},
+        '<=': {cmp: [instruction('cmp', [r0, r1]), instruction('bgt', [else_])],
+        fallthrough: statement.thenStatements, label: else_, cjs: statement.elseStatements},
+            // if( l >= r) { then } else { l < r  === r > l }
+        '>=': {cmp: [instruction('cmp', [r1, r0]), instruction('bgt', [else_])],
+        fallthrough: statement.thenStatements, label: else_, cjs: statement.elseStatements}     
     }
 
+
+
+    let pattern = table[statement.cond.op.value];
+    instructions.push(...pattern.cmp);
+    assembleStatements(pattern.fallthrough, instructions, variables);
+    instructions.push(instruction('jump', [done]));
+    instructions.push(codeLabel(pattern.label));
+    assembleStatements(pattern.cjs, instructions, variables);
+    instructions.push(codeLabel(done));
 
 }
 
