@@ -52,7 +52,7 @@ export function analyze(func){
     let errors = [];
     //can't do any more analysis here
     if(func instanceof ParseError){
-        return [func];
+        return {"scope" : new Scope(), 'errors' : [func]};
     }
 
     let scope = analyzeArguments(func.parameters, errors);
@@ -73,7 +73,9 @@ function analyzeArguments(parameters, errors){
 function analyzeBody(statements, scope, errors){
     for(let statement of statements){
         console.log("analyzing " + statement.constructor.name);
-        if(statement instanceof IfStatement || statement instanceof WhileStatement){
+        if(statement instanceof ParseError){
+            errors.push(statement);
+        } else if(statement instanceof IfStatement || statement instanceof WhileStatement){
             analyzeBlockedStatement(statement, scope, errors);
         } else if(statement instanceof VarDeclaration){
             insertIntoScope(statement.name, scope, errors);

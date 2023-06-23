@@ -226,16 +226,23 @@ export class Parser {
         //console.log("peeking for params: ", this.#peekToken().value);
         while (this.#hasMoreTokens() && this.#peekToken().value != '}') {
             console.log("parsing next statement, so far: ", statements.length);
-            let peeked = this.#peekToken().value;
+            let peekedToken = this.#peekToken();
+            if(peekedToken instanceof InvalidToken){
+                statements.push(new ParseError(peekedToken.line, peekedToken.col, peekedToken.line, peekedToken.col + peekedToken.value.length,
+                    "Invalid Token: " + peekedToken.value));
+                this.#nextToken();
+                continue;
+            }
+            let peeked = peekedToken.value;
             if (peeked == 'int') {
                 statements.push(this.#parseDeclaration());
             } else if (peeked == 'if' || peeked == 'while') {
                 statements.push(this.#parseIfOrWhileStatement());
             } else if (peeked == 'return') {
                 statements.push(this.#parseReturnStatement());
-            } else {
+            } else  {
                 statements.push(this.#parseAssignmentStatement());
-            }
+            } 
         }
         console.log("returning ", statements.length, " statements");
         console.log(JSON.stringify(statements));
