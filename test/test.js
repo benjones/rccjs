@@ -407,3 +407,31 @@ test('basic optimizer test', () => {
     console.log("\nafter optimizing");
     console.log(asm.toString());
 });
+
+
+test('test nesting with optimizer', () => {
+    let parser = new Parser(`int func(int x, int y){
+        if(x < y){
+            int i = 0;
+            while(i < 3){
+                x = x + 1;
+            }
+        }
+        return x;
+    }`);
+    let func = parser.parseFunction();
+    console.log(JSON.stringify(func));
+    let ret = analyze(func);
+    assert(ret.errors.length == 0);
+    let asm = assemble(func)
+    console.log("asm:");
+    let asStr = asm.toString()
+    console.log(asStr);
+    console.log(asStr.split("\n").length, " lines");
+    asm.optimize();
+    console.log("\nafter optimizing");
+    asStr = asm.toString()
+    console.log(asStr);
+    console.log(asStr.split("\n").length, " lines");
+
+});

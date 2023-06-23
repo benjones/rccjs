@@ -53,7 +53,7 @@ class Instruction {
     }
 
     toString() {
-        return `${this.label ? this.label + ": " : ""}${this.op} ${this.args.join(', ')}`;
+        return `${this.label ? this.label + ": " : "    "}${this.op} ${this.args.join(', ')}`;
     }
 }
 
@@ -102,6 +102,15 @@ class Variables {
     toString() {
         return [...this.#map].map(kv => `${kv[0]}: ${kv[1]}`).join('\n');
     }
+
+    //NOTE THIS WILL DELETE UNUSED PARAMETERS... IS THAT OK?
+    deleteUnused(usedVars) {
+        for(let key of this.#map.keys()){
+            if(!usedVars.has(key)){
+                this.#map.delete(key);
+            }
+        }
+    }
 }
 
 class Assembly {
@@ -121,9 +130,11 @@ class Assembly {
             let oldLength = this.instructions.length;
 
             this.optimizeSpills();
+            this.optimizeLabels();
 
             done = oldLength == this.instructions.length;
         }
+        return this; //for chaining
     }
 
     setVar(label, val) {
@@ -363,6 +374,40 @@ class Assembly {
             }
         }
         this.instructions = this.instructions.filter(x => x.op != 'nop');
+    }
+
+    optimizeLabels(){
+        //eliminate unused variables first
+        let usedVars = new Set();
+        for(let i = 0; i < this.instructions.length; i++){
+            let inst = this.instructions[i];
+            if(inst.op == 'load'){
+                usedVars.add(inst.args[0]);
+            } else if(inst.op == 'store'){
+                usedVars.add(inst.args[1]);
+            }
+            if(i < this.instructions.length -1 &&
+                !inst.op //just a label
+                && !this.instructions[i +1].op){
+                    //2 labels in a row, just use the 2nd one
+
+                this.#replaceLabel(inst.label, this.instructions[i+1].label);
+                inst.op = 'nop'; //mark it as a no op to filter out later
+            }
+        }
+        this.variables.deleteUnused(usedVars);
+        
+        this.instructions = this.instructions.filter(x => x.op != 'nop');
+    }
+
+    #replaceLabel(oldLabel, newLabel){
+        for(let inst of this.instructions){
+            for(let i = 0; i < inst.args.length; i++){
+                if(inst.args[i] == oldLabel){
+                    inst.args[i] = newLabel;
+                }   
+            }
+        }
     }
 
     //is the store here dead?

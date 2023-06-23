@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en-US" prefix="og: https://ogp.me/ns#">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Simple C Compiler</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        /* main {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            width:fit-content;
+            
+        } */
+
+        #container {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(min-content, 800px));
+            min-width: 500px;
+            max-width: 1200px;
+            gap: 20px;
+            border: solid 1px blue;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        #editor,
+        #asm {
+            font-family: monospace;
+            border: solid 1px black;
+            white-space: pre;
+            min-width: 200px;
+        }
+    </style>
+
+</head>
+
+<body>
+    <main>
+        <h1>Reduced-C Compiler</h1>
+        <div id="container">
+
+            <p id="editor" contenteditable="true">void func(){}</p>
+            <p id="asm">store label, r0</p>
+        </div>
+    </main>
+</body>
+
+
+<script>
+    document.getElementById('editor').addEventListener('keydown', function (e) {
+        if (e.keyCode == 9) {
+            e.preventDefault();
+            document.execCommand('insertHTML', false, '    ');
+        }
+    });
+</script>
+<script type="module" src="./ui.js"></script>
+</html>
