@@ -65,6 +65,7 @@ window.onload = ()=>{
     function displayCompilerErrors(errors){
         for(let err of errors){
             let li = document.createElement('li');
+            li.classList.add('errorLine');
             li.innerHTML = `Line ${err.startLine} column ${err.startCol}: ${err.reason}`;
             errorWindow.append(li);
 

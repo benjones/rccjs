@@ -392,7 +392,8 @@ export class Parser {
                 : token.value;
 
             let extra = "";
-            if (options == ';' && this.#prevToken.line != token.line) {
+            if (options == ';' && !(this.#prevToken() instanceof InvalidToken) && 
+                this.#prevToken().line != token.line) {
                 extra = "\nMaybe you forgot a semicolon at the end of a line?";
             } else {
                 this.#nextToken();
