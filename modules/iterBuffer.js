@@ -1,3 +1,4 @@
+//Author Ben Jones (benjones@cs.utah.edu)
 
 //buffered wrapper around an iterable thing to give you
 //peek() 
