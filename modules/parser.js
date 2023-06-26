@@ -1,3 +1,5 @@
+//Author Ben Jones (benjones@cs.utah.edu)
+
 import { arithmeticOps, delimiters, InvalidToken, logicOps, Lexer, EOF } from "./lexer.js";
 import { IterBuffer } from "./iterBuffer.js";
 

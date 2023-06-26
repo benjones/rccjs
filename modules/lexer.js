@@ -1,3 +1,4 @@
+//Author Ben Jones (benjones@cs.utah.edu)
 
 export class Token {
     constructor(value, line, col, index) {

@@ -1,10 +1,12 @@
+//Author Ben Jones (benjones@cs.utah.edu)
+
 import { ArithmeticExpression, AssignmentStatement, IfStatement, LiteralExpression, NegationExpression, ReturnStatement, VarDeclaration, VariableExpression, WhileStatement } from "./parser.js";
 
 
 //return the assembly version of the program
 export function assemble(func) {
     console.log("assembling\n\n\n\n");
-    let assembly = new Assembly();
+    let assembly = new Assembly(func.name);
     //return value goes here
     if (func.retType == Symbol.for('int')) {
         assembly.setVar(resLabel, 0);
@@ -116,9 +118,14 @@ class Variables {
 class Assembly {
     variables = new Variables();
     instructions = [];
-
+    funcName;
+    constructor(funcName){
+        this.funcName = funcName;
+    }
     toString() {
-        let ret = this.instructions.map(x => x.toString()).join('\n');
+
+        let ret = `${this.funcName}: \n`;
+        ret += this.instructions.map(x => x.toString()).join('\n');
         ret += "\n\n";
         ret += this.variables.toString();
         return ret;

@@ -1,3 +1,5 @@
+//Author Ben Jones (benjones@cs.utah.edu)
+
 //tests should be runnable either by opening test.html (must be running in a web server since CORS blocks loading js from files)
 //or with a commandline runner: brew install v8; d8 --module test.js
 

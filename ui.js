@@ -1,3 +1,5 @@
+//Author Ben Jones (benjones@cs.utah.edu)
+
 import {assemble } from './modules/backend.js';
 import { ParseError, Parser } from './modules/parser.js';
 import { analyze } from './modules/semantic.js';

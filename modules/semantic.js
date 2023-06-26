@@ -1,3 +1,5 @@
+//Author Ben Jones (benjones@cs.utah.edu)
+
 //Semantic analysis pass
 //Set up scopes, etc for AST nodes and consolidate errors 
 
