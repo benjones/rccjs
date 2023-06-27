@@ -401,7 +401,7 @@ export class Parser {
                 this.#nextToken();
             }
 
-            throw new ParseError(token.line, token.col, token.line, token.col,
+            throw new ParseError(token.line, token.col, token.line, token.col + token.value.length,
                 "expected " + expected + " but got " + got + extra);
 
 

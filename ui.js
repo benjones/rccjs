@@ -71,6 +71,7 @@ window.onload = () => {
 
     function compile() {
         let source = editor.innerText;
+        editor.innerHTML = editor.innerText; //throw away all the formatting
         errorWindow.innerHTML = '';
         asmElement.innerHTML = '';
         machineCodeElement.innerHTML = '';
@@ -108,13 +109,24 @@ window.onload = () => {
     }
 
     function displayCompilerErrors(errors) {
+        let source = editor.innerText.split('\n');
+        //just highlight the whole lines, ignoring columns
+        let highlightedLines = new Set();
+
         for (let err of errors) {
             let li = document.createElement('li');
             li.classList.add('errorLine');
             li.innerHTML = `Line ${err.startLine} column ${err.startCol}: ${err.reason}`;
             errorWindow.append(li);
-
+            //array is 0 based, lines are 1 based
+            for(let i = err.startLine -1 ; i < err.endLine; i++){
+                if(!highlightedLines.has(i)){
+                    highlightedLines.add(i);
+                    source[i] = `<span class="compilerError">${source[i]}</span>`;
+                }
+            }
         }
+        editor.innerHTML = source.join('\n');
     }
 }
 
