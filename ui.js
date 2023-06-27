@@ -30,41 +30,44 @@ customElements.define('line-numbered-pane',
         }
     });
 
+
+function runWhenTypingStops(element, callback){
+    let timer;
+    let when;
+    function timerCallback() {
+        let now = new Date().getTime();
+        if (now - when < 0) {
+            //not ready to update yet
+            setTimeout(timerCallback, when - now);
+        } else {
+            timer = undefined;
+            when = undefined;
+            callback();
+        }
+    }
+    element.addEventListener('input', (event) => {
+
+        if (!timer) {
+            timer = setTimeout(timerCallback, 1000);
+        }
+        //update the time on every keypress
+        when = new Date().getTime() + 1000;
+
+    });
+}
+
 window.onload = () => {
     console.log("hello from ui.js");
     let editor = document.getElementById('editor');
     let asmElement = document.getElementById('asm');
     let errorWindow = document.getElementById('errorWindow');
     let machineCodeElement = document.getElementById('machineCode');
+   
     compile(); //compile the sample code right away
 
-    let compileTimer;
-    let whenToCompile;
-
-
-    function timerCallback() {
-        let now = new Date().getTime();
-        if (now - whenToCompile < 0) {
-            //not ready to update yet
-            setTimeout(timerCallback, whenToCompile - now);
-        } else {
-            compileTimer = undefined;
-            whenToCompile = undefined;
-            compile();
-        }
-    }
-
-
-    editor.addEventListener('input', (event) => {
-
-        if (!compileTimer) {
-            compileTimer = setTimeout(timerCallback, 1000);
-        }
-        //update the time on every keypress
-        whenToCompile = new Date().getTime() + 1000;
-
-    });
-
+    //run 1s after typing stops
+    runWhenTypingStops(editor, compile);
+    runWhenTypingStops(asmElement, runAssembler);
 
     function compile() {
         let source = editor.innerText;
@@ -87,19 +90,21 @@ window.onload = () => {
             let asm = assemble(func).optimize();
             let asmString = asm.toString();
             asmElement.innerHTML = asmString;
-
-            let machineCode = machineCodeToHex(writeMachineCode(asmString));
-            console.log(machineCode);
-            machineCodeElement.innerText = machineCode;
+            runAssembler();
+           
         } else {
             displayCompilerErrors(analysisResults.errors);
         }
         console.log(document.getElementById('editorPane'));
         document.getElementById('editorPane').updateLineNumbers();
         document.getElementById('assemblyPane').updateLineNumbers();
+    }
 
-
-
+    function runAssembler(){
+        let asmString =  asmElement.innerHTML;
+        let machineCode = machineCodeToHex(writeMachineCode(asmString));
+        console.log(machineCode);
+        machineCodeElement.innerText = machineCode;
     }
 
     function displayCompilerErrors(errors) {
