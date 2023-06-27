@@ -1,5 +1,6 @@
 //Author Ben Jones (benjones@cs.utah.edu)
 
+import { machineCodeToHex, writeMachineCode } from './modules/assembler.js';
 import { assemble } from './modules/backend.js';
 import { ParseError, Parser } from './modules/parser.js';
 import { analyze } from './modules/semantic.js';
@@ -18,9 +19,6 @@ customElements.define('line-numbered-pane',
         }
         connectedCallback() {
             let contentPane = this.shadowRoot.querySelector('slot[name=content]').assignedElements()[0];
-//            console.log(contentPane);
-//            console.log(window.getComputedStyle(contentPane));
-//            console.log(window.getComputedStyle(contentPane).getPropertyValue('font-family'));
             this.shadowRoot.getElementById('numbers').style.setProperty('font-family', 
             window.getComputedStyle(contentPane).getPropertyValue('font-family'));
         }
@@ -29,9 +27,7 @@ customElements.define('line-numbered-pane',
             let numLines = contentPane.innerText.split('\n').length;
             let numberString = Array(numLines).fill().map((x, i) => i + 1).join('\n');
             this.shadowRoot.getElementById('numbers').innerHTML = numberString;
-
         }
-
     });
 
 window.onload = () => {
@@ -39,6 +35,7 @@ window.onload = () => {
     let editor = document.getElementById('editor');
     let asmElement = document.getElementById('asm');
     let errorWindow = document.getElementById('errorWindow');
+    let machineCodeElement = document.getElementById('machineCode');
     compile(); //compile the sample code right away
 
     let compileTimer;
@@ -72,6 +69,8 @@ window.onload = () => {
     function compile() {
         let source = editor.innerText;
         errorWindow.innerHTML = '';
+        asmElement.innerHTML = '';
+        machineCodeElement.innerHTML = '';
         console.log("text to compile: ", source);
         let parser = new Parser(source);
         let func = parser.parseFunction();
@@ -86,14 +85,20 @@ window.onload = () => {
 
         if (analysisResults.errors.length == 0) {
             let asm = assemble(func).optimize();
+            let asmString = asm.toString();
+            asmElement.innerHTML = asmString;
 
-            asmElement.innerHTML = asm.toString();
+            let machineCode = machineCodeToHex(writeMachineCode(asmString));
+            console.log(machineCode);
+            machineCodeElement.innerText = machineCode;
         } else {
             displayCompilerErrors(analysisResults.errors);
         }
         console.log(document.getElementById('editorPane'));
         document.getElementById('editorPane').updateLineNumbers();
         document.getElementById('assemblyPane').updateLineNumbers();
+
+
 
     }
 
