@@ -59,9 +59,22 @@ export function analyze(func){
 
     let scope = analyzeArguments(func.parameters, errors);
 
-    analyzeBody(func.body, scope, errors);
-    
-    //todo check to make sure there's a return statment IFF this returns int
+    let hasReturnStatement = analyzeBody(func.body, scope, errors);
+    console.log("Analysis done, has return statement: ", hasReturnStatement);
+
+    //TODO: improve error location here if wanted...
+
+    if(func.retType == Symbol.for('int')){
+        if(!hasReturnStatement){
+            errors.push(new ParseError(1,1,1,1,
+                "Function says it returns 'int' but has no return statements"));
+        }
+    } else {
+        if(hasReturnStatement){
+            errors.push(new ParseError(1,1,1,1,
+                "Function says it returns 'void' but contains return statements"));
+        }
+    }
 
     return {"scope": scope, "errors": errors};
 }
@@ -72,13 +85,15 @@ function analyzeArguments(parameters, errors){
     return ret;
 }
 
+//returns true if body contains a return statement
 function analyzeBody(statements, scope, errors){
+    let anyReturnStatement = false;
     for(let statement of statements){
         console.log("analyzing " + statement.constructor.name);
         if(statement instanceof ParseError){
             errors.push(statement);
         } else if(statement instanceof IfStatement || statement instanceof WhileStatement){
-            analyzeBlockedStatement(statement, scope, errors);
+            anyReturnStatement ||= analyzeBlockedStatement(statement, scope, errors);
         } else if(statement instanceof VarDeclaration){
             insertIntoScope(statement.name, scope, errors);
             //todo: actually this needs to just be a literal expression, I think
@@ -93,11 +108,12 @@ function analyzeBody(statements, scope, errors){
             analyzeExpression(statement.expr, scope, errors);
         } else if(statement instanceof ReturnStatement ){
             analyzeExpression(statement.expr, scope, errors);
-
+            anyReturnStatement = true;
         } else {
             console.log("unknown statement type");
         }
     }
+    return anyReturnStatement;
 }
 
 function analyzeSimpleExpression(expr, scope, errors){
@@ -133,19 +149,21 @@ function analyzeExpression(expr, scope, errors){
     }
 }
 
+//returns true if there's a return statement somewhere in here
 function analyzeBlockedStatement(statement, scope, errors){
     console.log(JSON.stringify(statement));
     analyzeConditionalExpression(statement.cond, scope, errors);
     let bodyScope = new Scope(scope); //nested scope
     if(statement instanceof IfStatement){
-        analyzeBody(statement.thenStatements, bodyScope, errors);
+        let anyReturn = analyzeBody(statement.thenStatements, bodyScope, errors);
         console.log(JSON.stringify(statement.elseStatements));
         if(statement.elseStatements.length > 0){
             let elseScope = new Scope(scope);
-            analyzeBody(statement.elseStatements, elseScope, errors);
+            anyReturn ||= analyzeBody(statement.elseStatements, elseScope, errors);
         }
+        return anyReturn;
     } else {
-        analyzeBody(statement.body, bodyScope, errors);
+        return analyzeBody(statement.body, bodyScope, errors);
     }
 
 }
