@@ -17,6 +17,9 @@ export function assemble(func) {
         assembly.setVar(parameter.value, 0);
     }
     assembly.assembleStatements(func.body);
+    if (func.retType != Symbol.for('int')) {
+        assembly.addHalt();
+    }
 
     return assembly;
 
@@ -167,10 +170,15 @@ class Assembly {
             } else if (statement instanceof ReturnStatement) {
                 let label = this.assembleExpression(statement.expr);
                 this.instructions.push(...memCopy(label, resLabel));
+                this.addHalt();
             } else {
                 console.log("ASSEMBLING UNKNOWN STATEMENT TYPE");
             }
         }
+    }
+
+    addHalt(){
+        this.instructions.push(instruction('halt', []));
     }
 
     //will evaluate the expression and store it in memory and return the label
