@@ -385,6 +385,9 @@ class Assembly {
                         curr.args = [curr.agrs[0], curr.args[0], next.args[1]];
                         next.op = 'nop';
                     }
+                } else {
+                    //the load is definitely dead, so make it a nop
+                    next.op = 'nop';
                 }
             }
         }
