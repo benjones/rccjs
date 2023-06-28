@@ -6,6 +6,7 @@ import { ParseError, Parser } from './modules/parser.js';
 import { analyze } from './modules/semantic.js';
 
 
+//custom element to add line numbers to the C and assembly editor panes
 customElements.define('line-numbered-pane',
     class extends HTMLElement {
         constructor() {
@@ -31,6 +32,7 @@ customElements.define('line-numbered-pane',
     });
 
 
+//trigger stuff to run after we stop typing
 function runWhenTypingStops(element, callback){
     let timer;
     let when;
@@ -57,7 +59,6 @@ function runWhenTypingStops(element, callback){
 }
 
 window.onload = () => {
-    console.log("hello from ui.js");
     let editor = document.getElementById('editor');
     let asmElement = document.getElementById('asm');
     let errorWindow = document.getElementById('errorWindow');
@@ -75,17 +76,10 @@ window.onload = () => {
         errorWindow.innerHTML = '';
         asmElement.innerHTML = '';
         machineCodeElement.innerHTML = '';
-        console.log("text to compile: ", source);
         let parser = new Parser(source);
         let func = parser.parseFunction();
-        // if(func instanceof ParseError){
-        //     displayCompilerErrors([func]);
-        // }
-        console.log("parsed function: ");
-        console.log(func);
+
         let analysisResults = analyze(func);
-        console.log("results:");
-        console.log(analysisResults);
 
         if (analysisResults.errors.length == 0) {
             let asm = assemble(func).optimize();
@@ -96,7 +90,8 @@ window.onload = () => {
         } else {
             displayCompilerErrors(analysisResults.errors);
         }
-        console.log(document.getElementById('editorPane'));
+        //the panes are different from the elements we have cached
+        //these are the custom elements that contain the line number bits
         document.getElementById('editorPane').updateLineNumbers();
         document.getElementById('assemblyPane').updateLineNumbers();
     }
@@ -104,7 +99,6 @@ window.onload = () => {
     function runAssembler(){
         let asmString =  asmElement.innerHTML;
         let machineCode = machineCodeToHex(writeMachineCode(asmString));
-        console.log(machineCode);
         machineCodeElement.innerText = machineCode;
     }
 
