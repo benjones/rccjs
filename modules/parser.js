@@ -134,11 +134,7 @@ export class Parser {
         //value will be InvalidToken with "end of file"
         //when we're out of tokens, 
         return this.#tokens.next().value;
-        // let ret = this.#iter.next();
-        // if(ret.done){
-        //     throw new InvalidToken("end of file", 0,0);
-        // }
-        // return ret.value;
+       
     }
     //return what will be returned by the next call to next, but don't advance the stream
     #peekToken() {
@@ -182,8 +178,8 @@ export class Parser {
             return new FunctionDef(retType.line, retType.col, endCurly.line, endCurly.col,
                 Symbol.for(retType.value), name, parameters, body);
         } catch (parseError) {
-            console.log("parse error, todo, better diagnostics");
-            console.log(parseError.stack);
+            //console.log("parse error, todo, better diagnostics");
+            //console.log(parseError.stack);
             return parseError;
         }
     }
@@ -227,7 +223,6 @@ export class Parser {
         let statements = [];
         //console.log("peeking for params: ", this.#peekToken().value);
         while (this.#hasMoreTokens() && this.#peekToken().value != '}') {
-            console.log("parsing next statement, so far: ", statements.length);
             let peekedToken = this.#peekToken();
             if(peekedToken instanceof InvalidToken){
                 statements.push(new ParseError(peekedToken.line, peekedToken.col, peekedToken.line, peekedToken.col + peekedToken.value.length,
@@ -246,8 +241,6 @@ export class Parser {
                 statements.push(this.#parseAssignmentStatement());
             } 
         }
-        console.log("returning ", statements.length, " statements");
-        console.log(JSON.stringify(statements));
         return statements;
     }
 

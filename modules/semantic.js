@@ -14,19 +14,16 @@ class Scope {
     }
 
     getDeclaration(id){
-        console.log("looking up", id);
         let map = this.#members;
         let scope = this;
         while(true){
             if(map.has(id)){
-                console.log("found it");
                 return map.get(id);
             }
             if(scope.#parent){
                 scope = scope.#parent;
                 map = scope.#members;
             } else {
-                console.log("decl not found: ", id);
                 return null;
             }
         }
@@ -60,7 +57,7 @@ export function analyze(func){
     let scope = analyzeArguments(func.parameters, errors);
 
     let hasReturnStatement = analyzeBody(func.body, scope, errors);
-    console.log("Analysis done, has return statement: ", hasReturnStatement);
+    // console.log("Analysis done, has return statement: ", hasReturnStatement);
 
     //TODO: improve error location here if wanted...
 
@@ -89,7 +86,7 @@ function analyzeArguments(parameters, errors){
 function analyzeBody(statements, scope, errors){
     let anyReturnStatement = false;
     for(let statement of statements){
-        console.log("analyzing " + statement.constructor.name);
+        // console.log("analyzing " + statement.constructor.name);
         if(statement instanceof ParseError){
             errors.push(statement);
         } else if(statement instanceof IfStatement || statement instanceof WhileStatement){
@@ -99,7 +96,6 @@ function analyzeBody(statements, scope, errors){
             //todo: actually this needs to just be a literal expression, I think
             analyzeSimpleExpression(statement.value, scope, errors);
         } else if(statement instanceof AssignmentStatement){
-            console.log("assign", JSON.stringify(statement.lhs));
             let lhs = scope.getDeclaration(statement.lhs.value);
             if(!lhs){
                 errors.push(new ParseError(statement.startLine, statement.startCol, statement.endLine, statement.endCol,
@@ -117,7 +113,6 @@ function analyzeBody(statements, scope, errors){
 }
 
 function analyzeSimpleExpression(expr, scope, errors){
-    console.log("analyzing simple ", JSON.stringify(expr));
     if (expr instanceof VariableExpression) {
         if(!scope.getDeclaration(expr.name)){
             errors.push(new ParseError(expr.startLine, expr.startCol, expr.endLine, expr.endCol,
@@ -151,12 +146,10 @@ function analyzeExpression(expr, scope, errors){
 
 //returns true if there's a return statement somewhere in here
 function analyzeBlockedStatement(statement, scope, errors){
-    console.log(JSON.stringify(statement));
     analyzeConditionalExpression(statement.cond, scope, errors);
     let bodyScope = new Scope(scope); //nested scope
     if(statement instanceof IfStatement){
         let anyReturn = analyzeBody(statement.thenStatements, bodyScope, errors);
-        console.log(JSON.stringify(statement.elseStatements));
         if(statement.elseStatements.length > 0){
             let elseScope = new Scope(scope);
             anyReturn ||= analyzeBody(statement.elseStatements, elseScope, errors);
