@@ -5,15 +5,13 @@ import { ArithmeticExpression, AssignmentStatement, IfStatement, LiteralExpressi
 
 //return the assembly version of the program
 export function assemble(func) {
-    console.log("assembling\n\n\n\n");
     let assembly = new Assembly(func.name);
     //return value goes here
     if (func.retType == Symbol.for('int')) {
         assembly.setVar(resLabel, 0);
     }
-    console.log(JSON.stringify(func));
+    // console.log(JSON.stringify(func));
     for (let parameter of func.parameters) {
-        console.log(JSON.stringify(parameter));
         assembly.setVar(parameter.value, 0);
     }
     assembly.assembleStatements(func.body);
@@ -153,7 +151,7 @@ class Assembly {
 
     assembleStatements(statements) {
         for (let statement of statements) {
-            console.log("statement type: ", statement.constructor.name);
+            // console.log("statement type: ", statement.constructor.name);
             if (statement instanceof VarDeclaration) {
                 //should be a Literal here
                 this.setVar(statement.name.value, statement.value.value);
@@ -163,7 +161,6 @@ class Assembly {
             } else if (statement instanceof WhileStatement) {
                 this.assembleWhileStatement(statement);
             } else if (statement instanceof AssignmentStatement) {
-                console.log("assignment statement: ", JSON.stringify(statement));
                 let rhs = this.assembleExpression(statement.expr);
                 this.instructions.push(...memCopy(rhs, statement.lhs.value));
 
@@ -185,7 +182,7 @@ class Assembly {
     //for that instructions.  Simple expressions don't require any instructions
     //potentially clobbers both registers
     assembleExpression(expr) {
-        console.log("assembling expr of type: ", expr.constructor.name);
+        // console.log("assembling expr of type: ", expr.constructor.name);
         if (expr instanceof LiteralExpression) {
             let literalName = `_CONSTANT_${expr.value}`;
             if (!this.variables.has(literalName)) {
@@ -222,7 +219,6 @@ class Assembly {
 
     assembleIfStatement(statement) {
 
-        console.log("assembling if: ", JSON.stringify(statement));
         let lhs = this.assembleExpression(statement.cond.lhs);
         let rhs = this.assembleExpression(statement.cond.rhs);
         let [then, else_, done] = this.variables.getIfLabels();
@@ -374,8 +370,6 @@ class Assembly {
                 //can potentially look at the rest of the program
                 //probably fine for CS1810 though...
                 if (isTemporaryLabel(curr.args[1]) || this.#deadStore(i)) {
-
-
                     if (curr.args[0] == next.args[1]) { //load/store to the same reg, no op
                         curr.op = 'nop';
                         next.op = 'nop';
@@ -435,25 +429,25 @@ class Assembly {
     //or by hitting the end or another store to that address (and know it's dead)
     #deadStore(index) {
         let label = this.instructions[index].args[1];
-        console.log(`is store to ${label} on line ${index} dead?`);
+        // console.log(`is store to ${label} on line ${index} dead?`);
         //the next instruction is a load of this label, which is why we're considering
         //checking for a dead store.  Ignore that instruction
         for (let i = index + 2; i < this.instructions.length; i++) {
             let inst = this.instructions[i];
             if (inst.op == 'bne' || inst.op == 'bgt' || inst.op == 'jump') {
-                console.log("no because of branch at", i);
+                // console.log("no because of branch at", i);
                 return false;
             }
             if (inst.op == 'load' && inst.args[0] == label) {
-                console.log("no because of load from it at", i);
+                // console.log("no because of load from it at", i);
                 return false;
             }
             if (inst.op == 'store' && inst.args[1] == label) {
-                console.log("yes because we store to it at ", i);
+                // console.log("yes because we store to it at ", i);
                 return true;
             }
         }
-        console.log("yes because we hit EOF");
+        // console.log("yes because we hit EOF");
         return true;
     }
 

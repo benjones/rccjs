@@ -26,7 +26,7 @@ export function writeMachineCode(code) {
         }
     }
 
-    console.log(instructions);
+    // console.log(instructions);
 
     for (let i = 0; i < instructions.length; i++) {
         let instruction = instructions[i];
@@ -155,8 +155,8 @@ export function writeMachineCode(code) {
 
     }
 
-    console.log("machine code after first pass");
-    console.log(JSON.stringify(machineCode));
+    // console.log("machine code after first pass");
+    // console.log(JSON.stringify(machineCode));
 
     //2nd pass, translate instructions with variables
     for (let i = 0; i < machineCode.length; i++) {
