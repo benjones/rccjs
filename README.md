@@ -6,6 +6,10 @@ Current versions are all JS that run in a simple web UI.  The compiler was writt
 
 The Assembler was written by Minwei Shen and modified by Ben Jones
 
+You can access this "running" at benjones.github.io/rccjs
+
+To run your own version, just clone this repo into a webserver and point students at index.html
+
 ## What's in here?
 
 All the major functionality is in the modules folder

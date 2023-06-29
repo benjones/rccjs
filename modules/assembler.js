@@ -127,7 +127,7 @@ export function writeMachineCode(code) {
                 break;
             case "clear":
                 //console.log("clear");
-                index = instruction.split(" ")[1][1];
+                let index = instruction.split(" ")[1][1];
                 if (index == 1)
                     machineCode.push(157);
                 else if (index == 0)
