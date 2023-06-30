@@ -6,7 +6,7 @@ export function writeMachineCode(code) {
     //console.log("begin assemble");
     let instructions = code.split("\n");
     let machineCode = [];
-    let labelLocation = {};
+
 
     // remove spaces
     let new_instructions =
@@ -27,7 +27,8 @@ export function writeMachineCode(code) {
     }
 
     // console.log(instructions);
-
+    let labelLocations = new Map();
+    let errors = [];
     for (let i = 0; i < instructions.length; i++) {
         let instruction = instructions[i];
         let split_instructions = instruction.split(":");
@@ -37,7 +38,7 @@ export function writeMachineCode(code) {
             //console.log(instruction);
             for (let j = 0; j < split_instructions.length - 1; j++) {
                 let label = split_instructions[j];
-                labelLocation[label] = i;
+                labelLocations.set(label,i);
             }
             instruction = split_instructions[split_instructions.length - 1].trim();
 
@@ -56,17 +57,15 @@ export function writeMachineCode(code) {
 
         //1st pass translation. some instructions are translated. some variables and labels are recorded
         let instructionType = instruction.split(" ")[0];
-        switch (instructionType) {
+        let instObject = new Instruction(instruction);
+        switch (instObject.op) {
+            //these instructions don't do anything on the first pass
             case "store":
-                //console.log("store");
-                machineCode.push(store_instruction(instruction, 1, labelLocation));
-                break;
             case "load":
-                //console.log("load");
-                machineCode.push(load_instruction(instruction, 1, labelLocation));
-                break;
-            case "move":
-                //console.log("move");
+            case "jump":
+            case "bgt":
+            case "bne":
+                machineCode.push(instObject);
                 break;
             case "nop":
                 //console.log("nop");
@@ -74,83 +73,47 @@ export function writeMachineCode(code) {
                 break;
             case "cmp":
                 //console.log("cmp");
-                var result = cmp_instruction(instruction);
-                if (result == 0)
-                    alert("Error line " + (i + 1));
-                else
-                    machineCode.push(result);
+                machineCode.push(cmp_instruction(instObject, errors, i + 1));
                 break;
             case "add":
-                //console.log("add");
-                var result = cal_instruction(instruction, "add");
-                if (result == 0)
-                    alert("Error line " + (i + 1));
-                else
-                    machineCode.push(result);
-                break;
             case "sub":
-                //console.log("sub");
-                var result = cal_instruction(instruction, "sub");
-                if (result == 0)
-                    alert("Error line " + (i + 1));
-                else
-                    machineCode.push(result);
-                break;
             case "and":
-                //console.log("and");
-                var result = cal_instruction(instruction, "and");
-                if (result == 0)
-                    alert("Error line " + (i + 1));
-                else
-                    machineCode.push(result);
-                break;
-            case "or":
-                //console.log("or");
-                break;
-            case "nand":
-                //console.log("nand");
-                break;
             case "nor":
-                //console.log("nor");
-                var result = cal_instruction(instruction, "nor");
+                //ALU ops
+                var result = cal_instruction(instObject);
                 if (result == 0)
-                    alert("Error line " + (i + 1));
+                    errors.push(`Error on line ${i + 1}`);
                 else
                     machineCode.push(result);
                 break;
+
             case "not":
-                var result = not_instruction(instruction);
+                var result = not_instruction(instObject);
                 if (result == 0)
-                    alert("Error line " + (i + 1));
+                    errors.push(`Error on line  ${i + 1}`);
                 else
                     machineCode.push(result);
                 break;
             case "clear":
                 //console.log("clear");
-                let index = instruction.split(" ")[1][1];
-                if (index == 1)
+                if (instObject.args[0] == 'r1')
                     machineCode.push(157);
-                else if (index == 0)
+                else if (instObject.args[0] == 'r0')
                     machineCode.push(129);
+                else 
+                    errors.push(`invalid operand to not instruction on line ${i+1}`);
                 break;
             case "halt":
                 //console.log("halt");
                 machineCode.push(161);
                 break;
-            case "jump":
-                //console.log("jump");
-                machineCode.push(branch_instruction(instruction, 1, labelLocation));
-                break;
-            case "bgt":
-                //console.log("bgt");
-                machineCode.push(branch_instruction(instruction, 1, labelLocation));
-                break;
-            case "bne":
-                //console.log("bne");
-                machineCode.push(branch_instruction(instruction, 1, labelLocation));
+            case "or":
+            case "nand":
+            case "move":
+                errors.push(`unimplemented instruction ${instructionType} on line ${i + 1}`);
                 break;
             default:
-                alert("Error line " + (i + 1));
+               errors.push(`unknown instruction: ${instructionType} on line ${i + 1}`);
         }
 
     }
@@ -158,24 +121,26 @@ export function writeMachineCode(code) {
     // console.log("machine code after first pass");
     // console.log(JSON.stringify(machineCode));
 
+
+    //todo line numbers are all messed up at this point...
+
     //2nd pass, translate instructions with variables
     for (let i = 0; i < machineCode.length; i++) {
-        if (typeof (machineCode[i]) == "string") {
+        if (machineCode[i] instanceof Instruction){
             let instruction = machineCode[i];
-            let instructionType = instruction.split(" ")[0];
-            switch (instructionType) {
+            switch (instruction.op) {
                 case "store":
                     //console.log("store");
-                    machineCode[i] = store_instruction(instruction, 2, labelLocation);
+                    machineCode[i] = store_instruction(instruction, labelLocations, errors);
                     break;
                 case "load":
                     //console.log("store");
-                    machineCode[i] = load_instruction(instruction, 2, labelLocation);
+                    machineCode[i] = load_instruction(instruction, labelLocations, errors);
                     break;
                 case "jump":
                     //console.log("jump");
                     //machineCode[i] = jump_instruction(instruction,2,labelLocation);
-                    var lineno = branch_instruction(instruction, 2, labelLocation)
+                    var lineno = branch_instruction(instruction, labelLocations, errors)
                     // console.log(lineno);
                     // console.log(i)
                     if (lineno > i) {
@@ -187,7 +152,7 @@ export function writeMachineCode(code) {
                     break;
                 case "bgt":
                     //console.log("bgt");
-                    var lineno = branch_instruction(instruction, 2, labelLocation)
+                    var lineno = branch_instruction(instruction, labelLocations, errors)
                     if (lineno > i) {
                         machineCode[i] = 224 + lineno - i;
                     }
@@ -197,7 +162,7 @@ export function writeMachineCode(code) {
                     break;
                 case "bne":
                     //console.log("bne");
-                    var lineno = branch_instruction(instruction, 2, labelLocation)
+                    var lineno = branch_instruction(instruction, labelLocations, errors)
                     // console.log(lineno);
                     // console.log(i)
                     if (lineno > i) {
@@ -209,13 +174,13 @@ export function writeMachineCode(code) {
                     // console.log(machineCode[i]);
                     break;
                 default:
-                    alert(" Error line " + (i + 1));
+                    errors.push(`Error line  ${i + 1}`);
             }
 
         }
     }
 
-    return machineCode;
+    return {code: machineCode, errors: errors};
 }
 
 export function machineCodeToHex(machineCode) {
@@ -236,122 +201,126 @@ export function machineCodeToHex(machineCode) {
     return code;
 }
 
-function store_instruction(instruction, pass, labelLocation) {
-    if (pass == 1)
-        return instruction;
-    else {
-        var inst = instruction.split(",");
-        var a = inst[0].split(" ")[1][1];
-        var b = inst[1].trim();
-        var result = 0;
-        if (a == "1")
-            result += 32;
-
-        if (!labelLocation.hasOwnProperty(b)) {
-            alert("label " + b + " not defined");
-        }
-        result += labelLocation[b];
-        return result;
+class Instruction {
+    op;
+    args;
+    constructor(line){
+        let words = line.split(' ');
+        this.op = words[0];
+        this. args = words.slice(1,words.length).map( x => x.split(',')[0].trim()).filter(Boolean);
+        //console.log(`inst constructor ${line} -> ${this.op},  ${JSON.stringify(this.args)}`);
     }
 }
 
-function load_instruction(instruction, pass, labelLocation) {
-    if (pass == 1)
-        return instruction;
-    else {
-        var inst = instruction.split(",");
-        var a = inst[0].split(" ")[1].trim();
-        var b = inst[1].trim()[1];
-        var result = 64;
-        if (b == "1")
-            result += 32;
-        if (!labelLocation.hasOwnProperty(a)) {
-            alert("label " + a + " not defined");
-        }
-        result += labelLocation[a];
-        return result;
+function store_instruction(instruction, labelLocations, errors) {
+
+    let [a, b] = instruction.args;
+    var result = 0;
+    if (a == "r1")
+        result += 32;
+
+    if (!labelLocations.has(b)) {
+        errors.push(`undefined label  ${b}`);
+        return 0;
     }
+    result += labelLocations.get(b);
+    return result;
 }
 
-function cmp_instruction(instruction) {
-    var a, b;
-    instruction = instruction.trim();
-    a = instruction.split(" ")[1][1];
-    b = instruction[instruction.length - 1];
-    if (a == "0" && b == "0")
+function load_instruction(instruction, labelLocations, errors) {
+    let [a,b] = instruction.args;
+    var result = 64;
+    if (b == "r1")
+        result += 32;
+    if (!labelLocations.has(a)) {
+        errors.push(`undefined label ${a}`);
+        return 0;
+    }
+    result += labelLocations.get(a);
+    return result;
+
+}
+
+function cmp_instruction(instruction, errors, line) {
+
+    if(instruction.args.length != 2){
+        errors.push(`wrong number of operands for cmp on line ${line}`);
+        return 0;
+    }
+    let [a, b] = instruction.args;
+    if (a == "r0" && b == "r0")
         return 192;
-    else if (a == "0" && b == "1")
+    else if (a == "r0" && b == "r1")
         return 193;
-    else if (a == "1" && b == "0")
+    else if (a == "r1" && b == "r0")
         return 224;
-    else if (a == "1" && b == "1")
+    else if (a == "r1" && b == "r1")
         return 225;
     else {
-        alert("cmp error");
+        errors.push(`invalid operands for compare on line ${line}`);
         return 0;
     }
 
 }
 
 function not_instruction(instruction) {
-    var a, b;
-    instruction = instruction.trim();
-    a = instruction.split(" ")[1][1];
-    b = instruction[instruction.length - 1];
-    if (a == "0" && b == "0")
+    if(instructions.args.length != 2){
+        return 0;
+    }
+    let [a, b] = instruction.args;
+    if (a == "r0" && b == "r0")
         return 131;
-    else if (a == "0" && b == "1")
+    else if (a == "r0" && b == "r1")
         return 147;
-    else if (a == "1" && b == "0")
+    else if (a == "r1" && b == "r0")
         return 143;
-    else if (a == "1" && b == "1")
+    else if (a == "r1" && b == "r1")
         return 159;
     else {
-        alert("not instruction error");
         return 0;
     }
 }
 
-function cal_instruction(instruction, type) {
-    var a, b, c;
-    var r = instruction.split(",");
-    a = r[0].split(" ")[1][1];
-    b = r[1].trim()[1];
-    c = r[2].trim()[1];
-    var result = 128;
-    if (type == "add")
-        result += 0;
-    else if (type == "sub")
-        result += 1;
-    else if (type == "and")
-        result += 2;
-    else if (type == "nor")
-        result += 3;
-    else
+function cal_instruction(instruction) {
+    if(instruction.args.length != 3){
         return 0;
+    }
+    let [a,b,c] = instruction.args;
 
-    if (a == "1")
+    var result = 128;
+    switch(instruction.op){
+        case "add":
+            result += 0; break;
+        case "sub":
+            result += 1; break;
+        case "and":
+            result += 2; break;
+        case type == "nor":
+            result += 3; break;
+        default:
+            return 0;
+    }
+
+    if (a == "r1")
         result += 8;
-    if (b == "1")
+    if (b == "r1")
         result += 4;
-    if (c == "1")
+    if (c == "r1")
         result += 16;
 
     return result;
 }
 
-function branch_instruction(instruction, pass, labelLocation) {
-    if (pass == 1)
-        return instruction;
-    else {
-        // var label = instruction.split(" ")[1];
-        // var result = 160;
-        // result += labelLocation[label];
-        // return result;
-        var label = instruction.split(" ")[1];
-        if (!labelLocation.hasOwnProperty(label)) {
-            alert("label " + label + " not defined");
-        }
-        return labelLocation[label];
+function branch_instruction(instruction, labelLocations, errors) {
+    // var label = instruction.split(" ")[1];
+    // var result = 160;
+    // result += labelLocation[label];
+    // return result;
+    var label = instruction.args[0]
+    if (!labelLocations.has(label)) {
+        errors.push(`undefined label ${label}`);
+        return 0;
     }
+    return labelLocations.get(label);
+
 }
