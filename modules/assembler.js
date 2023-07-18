@@ -213,7 +213,10 @@ class Instruction {
 }
 
 function store_instruction(instruction, labelLocations, errors) {
-
+    if(instruction.args.length != 2){
+        errors.push(`store must have a register and a label as operands, but got: ${JSON.stringify(instruction.args)}`);
+        return 0;
+    }
     let [a, b] = instruction.args;
     var result = 0;
     if (a == "r1")
@@ -228,6 +231,10 @@ function store_instruction(instruction, labelLocations, errors) {
 }
 
 function load_instruction(instruction, labelLocations, errors) {
+    if(instruction.args.length != 2){
+        errors.push(`load must have a label and a register as operands, but got: ${JSON.stringify(instruction.args)}`);
+        return 0;
+    }
     let [a,b] = instruction.args;
     var result = 64;
     if (b == "r1")
