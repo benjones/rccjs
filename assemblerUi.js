@@ -12,10 +12,11 @@ window.onload = () => {
     function runAssembler(){
         let asmString =  asmElement.innerText;
         document.getElementById('assemblyPane').updateLineNumbers();
+        errorWindow.innerHTML = '';
+        machineCodeElement.innerText = '';
 
         let assemblerOutput = writeMachineCode(asmString);
         if(assemblerOutput.errors.length > 0){
-            machineCodeElement.innerText = '';
             displayAssemblerErrors(assemblerOutput.errors);
         } else {
             let machineCode = machineCodeToHex(assemblerOutput.code);

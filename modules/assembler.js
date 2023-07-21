@@ -80,7 +80,7 @@ export function writeMachineCode(code) {
             case "and":
             case "nor":
                 //ALU ops
-                var result = cal_instruction(instObject);
+                var result = cal_instruction(instObject, errors);
                 if (result == 0)
                     errors.push(`Error on line ${i + 1}`);
                 else
@@ -88,7 +88,7 @@ export function writeMachineCode(code) {
                 break;
 
             case "not":
-                var result = not_instruction(instObject);
+                var result = not_instruction(instObject, errors);
                 if (result == 0)
                     errors.push(`Error on line  ${i + 1}`);
                 else
@@ -264,16 +264,25 @@ function cmp_instruction(instruction, errors, line) {
     else if (a == "r1" && b == "r1")
         return 225;
     else {
-        errors.push(`invalid operands for compare on line ${line}`);
+        errors.push(`invalid operands for compare on line ${line}: ${instruction.args}`);
         return 0;
     }
 
 }
 
-function not_instruction(instruction) {
+function not_instruction(instruction, errors) {
     if(instructions.args.length != 2){
+        errors.push(`wrong number of operands for not instruction.  Expected 2, got ${instruction.args}`);
         return 0;
     }
+
+    for(let arg of instruction.args){
+        if(arg != 'r0' && arg != 'r1'){
+            errors.push(`opeand for ${instruction.op} instruction must be a register(r0 or r1), but got ${arg}`);
+            return 0;
+        }
+    }
+
     let [a, b] = instruction.args;
     if (a == "r0" && b == "r0")
         return 131;
@@ -288,11 +297,19 @@ function not_instruction(instruction) {
     }
 }
 
-function cal_instruction(instruction) {
+function cal_instruction(instruction, errors) {
     if(instruction.args.length != 3){
+        errors.push(`expected 3 operands for ${instruction.op} instruction, but got ${instruction.args}`);
         return 0;
     }
     let [a,b,c] = instruction.args;
+
+    for(let arg of instruction.args){
+        if(arg != 'r0' && arg != 'r1'){
+            errors.push(`opeand for ${instruction.op} instruction must be a register(r0 or r1), but got ${arg}`);
+            return 0;
+        }
+    }
 
     var result = 128;
     switch(instruction.op){
