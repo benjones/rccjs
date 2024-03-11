@@ -271,7 +271,7 @@ function cmp_instruction(instruction, errors, line) {
 }
 
 function not_instruction(instruction, errors) {
-    if(instructions.args.length != 2){
+    if(instruction.args.length != 2){
         errors.push(`wrong number of operands for not instruction.  Expected 2, got ${instruction.args}`);
         return 0;
     }
