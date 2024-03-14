@@ -319,7 +319,7 @@ function cal_instruction(instruction, errors) {
             result += 1; break;
         case "and":
             result += 2; break;
-        case type == "nor":
+        case "nor":
             result += 3; break;
         default:
             return 0;
