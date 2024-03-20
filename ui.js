@@ -48,7 +48,7 @@ window.onload = () => {
     }
 
     function runAssembler(){
-        let asmString =  asmElement.innerHTML;
+        let asmString =  asmElement.innerText;
         let assemblerOutput = writeMachineCode(asmString);
         if(assemblerOutput.errors.length > 0){
             machineCodeElement.innerText = '';
