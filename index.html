@@ -66,6 +66,16 @@
             background-color: red;
         }
 
+        #compileButton{
+            justify-self: center;
+            grid-column: 1/2;
+        }
+
+        #assembleButton {
+            justify-self: center;
+            grid-column: 2/3;
+        }
+
 
     </style>
 
@@ -126,17 +136,25 @@
                 <p slot="content" id="asm" contenteditable="true">store label, r0</p>
             </line-numbered-pane>
             <p id="machineCode">Machine code here</p>
+
+            <button id="compileButton">Compile</button>
+            <button id="assembleButton">Assemble</button>
+            <div></div><!--fill the row-->
+
             <h2 id="errorLabel">Compiler Errors</h2>
             <h2 id="instructionsLabel">Instructions</h2>
             <ul id="errorWindow"></ul>
-            <p id="instructions">Write your reduced-C code in the Code Editor pane. When you stop typing,
-                Your code will be automatically compiled and assembled (if there are no errors).
+            <p id="instructions">Write your reduced-C code in the Code Editor panel, 
+                then click the "Compile" button to produce assembly code.  Note: this will
+                overwrite any changes you made to the assembly code.
+                <br /> <br />
                 If you have errors, try to fix the first error first, since the compiler has
                 a hard time producing good error messages after the first error.
                 <br /> <br />
                 Once the code is compiling without errors, you can edit the parameter values
                 at the bottom of the assembly pane. All the parameters are initially filled
-                in as 0.
+                in as 0.  Once you're done editing the assembly code, click the "Assemble" button
+                to produce machine code.  
                 <br /> <br />
                 The "assembler to machine code only" part of this tool available on
                 <a href="assembler.html">this page</a>.  Find out more about this tool

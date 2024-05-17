@@ -18,8 +18,12 @@ window.onload = () => {
     compile(); //compile the sample code right away
 
     //run 1s after typing stops
-    runWhenTypingStops(editor, compile);
-    runWhenTypingStops(asmElement, runAssembler);
+    //JK, this turned out to be bad UI
+    //runWhenTypingStops(editor, compile);
+    //runWhenTypingStops(asmElement, runAssembler);
+
+    document.getElementById('compileButton').onclick = compile;
+    document.getElementById('assembleButton').onclick = runAssembler;
 
     function compile() {
         let source = editor.innerText;
