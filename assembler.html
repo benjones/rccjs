@@ -63,6 +63,10 @@
             white-space: pre;
         }
 
+        #assembleButton {
+            justify-self: center;
+        }
+
     </style>
 
 </head>
@@ -125,15 +129,24 @@ B:  5
 C:  -1</p>
             </line-numbered-pane>
             <p id="machineCode">Machine code here</p>
+
+            <button id="assembleButton">Assemble</button>
+            <div></div> <!-- fill the row -->
+
             <h2 id="errorLabel">Assembler Errors</h2>
             <h2 id="instructionsLabel">Instructions</h2>
+
+
+            
             <ul id="errorWindow"></ul>
             <p id="instructions">Write your assembly code in the "Assembly Editor" panel.
-                When you stop typing, your code will be automatically assembled into machine code.
+                When you're ready, click the "Assemble" button to generate machine code.
+                Note: this will overwrite anything in the "machine code" panel.
+                <br />
                 If you have errors, try to fix the first error first, since the assembler has
                 a hard time producing good error messages after the first error.
                 <br />
-                You can write reduced code and have it compiled/assembled on
+                You can write reduced C code and have it compiled/assembled on
                 <a href="index.html">this page</a>.  Find out more about this tool
                 <a href="https://github.com/benjones/rccjs">here</a>
             </p>

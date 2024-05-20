@@ -7,7 +7,9 @@ window.onload = () => {
     let asmElement = document.getElementById('asm');
     let machineCodeElement = document.getElementById('machineCode');
     let errorWindow = document.getElementById('errorWindow');
-    runWhenTypingStops(asmElement, runAssembler);
+
+    //runWhenTypingStops(asmElement, runAssembler);
+    document.getElementById('assembleButton').onclick = runAssembler;
 
     function runAssembler(){
         let asmString =  asmElement.innerText;
