@@ -1,0 +1,8 @@
+# Package Managers
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+src/lib/assembly/sc-assembly.js
+src/lib/assembly/sc-assembly.terms.js
+src/lib/assembly/sc-assembly.grammar.js
+old

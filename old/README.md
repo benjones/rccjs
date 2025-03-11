@@ -1,14 +1,12 @@
 # Compiler + Assembler for CS 1810 (formerly CS 1030)
 
-Forked from [Ben Jones](https://github.com/benjones/rccjs)
-
 This repo contains tools adapted from versions by Joe Zachary for writing code to run on the "Simple Computer" simulator.
 
 Current versions are all JS that run in a simple web UI. The compiler was written by Ben Jones based on the design of Peter Marheine who wrote a Rust version.
 
 The Assembler was written by Minwei Shen and modified by Ben Jones
 
-You can access this [here](https://example.com)
+You can access this "running" at benjones.github.io/rccjs
 
 To run your own version, just clone this repo into a webserver and point students at index.html
 

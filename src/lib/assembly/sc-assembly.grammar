@@ -1,0 +1,70 @@
+@external propSource SC_Assembly_Highlighting from "./Assembly-Highlights"
+@top Program { Statement* }
+
+Statement {
+  LabelDecl? Instruction
+}
+
+LabelDecl {
+  VarLabel | CodeLabel
+}
+
+VarLabel[@name=VarLabel] {
+  VarName ":" Number
+}
+
+CodeLabel[@name=CodeLabel] {
+  CodeName ":"
+}
+
+Instruction {
+  (kw<"store"> Register VarName)
+| (kw<"load"> VarName Register)
+| (kw<"cmp"> Register Register)
+| (kw<"add"> Register Register Register)
+| (kw<"sub"> Register Register Register)
+| (kw<"and"> Register Register Register)
+| (kw<"nor"> Register Register Register)
+| (kw<"not"> Register Register)
+| (kw<"clear"> Register)
+| (kw<"halt">)
+| (kw<"jump"> CodeName)
+| (kw<"bgt"> CodeName)
+| (kw<"bne"> CodeName)
+| halt
+}
+
+R1 { rOne }
+R0 { rZero }
+RC { rc }
+Register { R1 | R0 | RC }
+
+@tokens {
+  whitespace   { $[ \t\r\n]+ }
+  LineComment  { "//" ![\n]* }
+
+  // VarName: uppercase letters only, no digits.
+  VarName      { @asciiUppercase+ }
+
+  // CodeName: lowercase letters only, no digits.
+  CodeName     { @asciiLowercase @asciiLowercase+ (":"|"\n") }
+
+  Number       { "-"? @digit+ }
+
+  rOne           { "r1" | "R1" | "rb" | "rB" | "Rb" | "RB" }
+  rZero           { "r0" | "R0" | "ra" | "rA" | "Ra" | "RA" }
+  rc              { "rc" | "rC" | "Rc" | "RC" }
+
+  identifier   { @asciiLetter (@asciiLetter | @digit)+ }
+
+  halt         { "halt" }
+
+  @precedence { rOne, rZero, VarName, halt, CodeName, identifier }
+
+}
+
+@skip { whitespace | LineComment }
+
+///////////////////////////////////////////
+// Keyword specialization helper
+kw<term> { @specialize<identifier, term> }

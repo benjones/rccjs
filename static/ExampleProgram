@@ -1,0 +1,16 @@
+top:  load B, r0
+      clear r1
+      cmp r0, r1
+      bgt go
+      halt
+go:   not r1, r1
+      add r0, r1, r0       
+      store r0, B
+      load S, r0
+      load A, r1
+      add r0, r1, r0
+      store r0, S
+      jump top
+A:    2
+B:    3
+S:    0
