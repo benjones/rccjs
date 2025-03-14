@@ -1,5 +1,8 @@
 export class CompilerError extends Error {
+	line: number;
+
 	constructor(message: string, line?: number) {
-		super(message + (line ? ` on line ${line}` : ''));
+		super(message);
+		this.line = line ?? -1;
 	}
 }

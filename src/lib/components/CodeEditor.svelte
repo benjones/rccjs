@@ -2,6 +2,8 @@
 	import Editor from '$lib/components/Editor.svelte';
 	import { onMount } from 'svelte';
 	import type { Nullable } from '../../app';
+	import { machineCodeToHex, writeMachineCode } from '$lib/assembler';
+	import { State } from '$lib/state.svelte';
 
 	const defaultValue = [
 		'\tload A, r0',
@@ -18,9 +20,10 @@
 
 	let value: string[] = $state([]);
 
-	function save() {
-		localStorage.setItem('codeEditorValue', JSON.stringify(value));
-	}
+	let lastUpdatedTimer: number;
+
+	let autoCompile = $state(false);
+	let vimMode = $state(false);
 
 	function load() {
 		const localStorageValue = localStorage.getItem('codeEditorValue') as Nullable<string>;
@@ -40,6 +43,24 @@
 		}
 
 		startValue = value;
+
+		const localStorageAutoCompile = localStorage.getItem('autoCompile') as Nullable<string>;
+
+		if (localStorageAutoCompile == null) {
+			autoCompile = false;
+			return;
+		}
+
+		autoCompile = JSON.parse(localStorageAutoCompile);
+
+		const localStorageVimMode = localStorage.getItem('vimMode') as Nullable<string>;
+
+		if (localStorageVimMode == null) {
+			vimMode = false;
+			return;
+		}
+
+		vimMode = JSON.parse(localStorageVimMode);
 	}
 
 	onMount(() => {
@@ -47,35 +68,52 @@
 		$effect(save);
 	});
 
-	function assemble() {}
+	function save() {
+		clearTimeout(lastUpdatedTimer);
+		localStorage.setItem('codeEditorValue', JSON.stringify(value));
+		localStorage.setItem('autoCompile', JSON.stringify(autoCompile));
+		localStorage.setItem('vimMode', JSON.stringify(vimMode));
+
+		lastUpdatedTimer = window.setTimeout(autoAssemble, 1000);
+	}
+
+	function autoAssemble() {
+		if (!autoCompile) return;
+
+		clearTimeout(lastUpdatedTimer);
+		assemble();
+	}
+
+	function assemble() {
+		let asmOut = writeMachineCode(value.join('\n'));
+		let machineCode = machineCodeToHex(asmOut.code);
+		State.asmErrors = asmOut.errors;
+
+		State.machineCodeOutput = [machineCode.trim().replaceAll('\n', '')];
+	}
+
 </script>
 
 <div class="flex h-full flex-col items-center gap-4">
 	<h2>Code Editor</h2>
 
-	{#if startValue.length > 0}
-		<Editor initialValue={startValue} bind:value />
-	{/if}
+	<div class="w-10/12 h-3 flex items-center justify-between">
+		<div class="flex gap-2 items-center">
+			<input type="checkbox" onchange={assemble} bind:checked={autoCompile}>
+			<label for="autoCompile">Auto Compile</label>
+			<input type="checkbox" bind:checked={vimMode}>
+			<label for="vimMode">Vim Key Bindings</label>
+		</div>
+		<div>
+			<a href="https://www.vim-hero.com/">Learn Vim</a>
+		</div>
+	</div>
+
+	{#key vimMode}
+		{#if startValue.length > 0}
+			<Editor initialValue={startValue} {vimMode} bind:value />
+		{/if}
+	{/key}
 
 	<button onclick={assemble}>Assemble</button>
 </div>
-
-<style lang="scss">
-	button {
-		padding: 0.5rem;
-		border-radius: 0.5rem;
-		background-color: var(--color-blue-800);
-		color: white;
-		font-size: 1rem;
-		margin-top: 1rem;
-
-		&:hover {
-			background-color: var(--color-blue-700);
-			cursor: pointer;
-		}
-
-		&:active {
-			background-color: var(--color-blue-900);
-		}
-	}
-</style>
