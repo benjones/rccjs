@@ -36,6 +36,7 @@ export function writeMachineCode(code) {
         //labelled instruction
         if (split_instructions.length > 1) {
             //console.log(instruction);
+            //there may be many labels for the same instruction, so loop
             for (let j = 0; j < split_instructions.length - 1; j++) {
                 let label = split_instructions[j];
                 labelLocations.set(label,i);
@@ -49,7 +50,7 @@ export function writeMachineCode(code) {
                 if (value >= 0)
                     machineCode.push(value)
                 else
-                    machineCode.push(256 + value);
+                    machineCode.push(256 + value); //2's complement negatives
 
                 continue;
             }
@@ -69,7 +70,10 @@ export function writeMachineCode(code) {
                 break;
             case "nop":
                 //console.log("nop");
-                machineCode.push(161);
+                //TODO/FIXME SAME AS HALT?
+                //See virtualMachine.js for an explanation
+                //see nopsolver.py for proof :)
+                machineCode.push(0xA0); //161 dec 
                 break;
             case "cmp":
                 //console.log("cmp");
@@ -97,15 +101,15 @@ export function writeMachineCode(code) {
             case "clear":
                 //console.log("clear");
                 if (instObject.args[0] == 'r1')
-                    machineCode.push(157);
+                    machineCode.push(0x9D); //157
                 else if (instObject.args[0] == 'r0')
-                    machineCode.push(129);
+                    machineCode.push(0x81); //129
                 else 
                     errors.push(`invalid operand to not instruction on line ${i+1}`);
                 break;
             case "halt":
                 //console.log("halt");
-                machineCode.push(161);
+                machineCode.push(0xA1); //161
                 break;
             case "or":
             case "nand":
@@ -144,20 +148,27 @@ export function writeMachineCode(code) {
                     // console.log(lineno);
                     // console.log(i)
                     if (lineno > i) {
-                        machineCode[i] = 160 + lineno - i;
+                        //160 = A0 = 1010_0000
+                        machineCode[i] = 0xA0 + lineno - i;
                     }
                     else {
-                        machineCode[i] = 192 + lineno - i;
+                        //192 = C0 = 1100_0000
+                        //but we subtract from it, so will be
+                        //101xxxxx (- 5 bit offset)
+                        machineCode[i] = 0xC0 + lineno - i;
                     }
                     break;
                 case "bgt":
                     //console.log("bgt");
                     var lineno = branch_instruction(instruction, labelLocations, errors)
                     if (lineno > i) {
-                        machineCode[i] = 224 + lineno - i;
+                        //224 = 0xE0 = 1110_0000
+                        machineCode[i] = 0xE0 + lineno - i;
                     }
                     else {
-                        machineCode[i] = 256 + lineno - i;
+                        //but we're subtracting so we get
+                        //111xxxxx (-5 bit offset)
+                        machineCode[i] = 0x100 + lineno - i;
                     }
                     break;
                 case "bne":
@@ -166,10 +177,13 @@ export function writeMachineCode(code) {
                     // console.log(lineno);
                     // console.log(i)
                     if (lineno > i) {
-                        machineCode[i] = 192 + lineno - i;
+                        //0x110_offset
+                        machineCode[i] = 0xC0 + lineno - i;
                     }
                     else {
-                        machineCode[i] = 224 + lineno - i;
+                        //0x1110 - offset ->
+                        //0x110_5 bit offset
+                        machineCode[i] = 0xE0 + lineno - i;
                     }
                     // console.log(machineCode[i]);
                     break;
@@ -220,7 +234,7 @@ function store_instruction(instruction, labelLocations, errors) {
     let [a, b] = instruction.args;
     var result = 0;
     if (a == "r1")
-        result += 32;
+        result += 0x20;
 
     if (!labelLocations.has(b)) {
         errors.push(`undefined label  ${b}`);
@@ -236,9 +250,9 @@ function load_instruction(instruction, labelLocations, errors) {
         return 0;
     }
     let [a,b] = instruction.args;
-    var result = 64;
+    var result = 0x40;
     if (b == "r1")
-        result += 32;
+        result += 0x20;
     if (!labelLocations.has(a)) {
         errors.push(`undefined label ${a}`);
         return 0;
@@ -254,15 +268,16 @@ function cmp_instruction(instruction, errors, line) {
         errors.push(`wrong number of operands for cmp on line ${line}`);
         return 0;
     }
+
     let [a, b] = instruction.args;
     if (a == "r0" && b == "r0")
-        return 192;
+        return 0xC0; //1100_0000
     else if (a == "r0" && b == "r1")
-        return 193;
+        return 0xC1;//1100_0001
     else if (a == "r1" && b == "r0")
-        return 224;
+        return 0xE0; //1110_0000
     else if (a == "r1" && b == "r1")
-        return 225;
+        return 0xE1; //1110_0001
     else {
         errors.push(`invalid operands for compare on line ${line}: ${instruction.args}`);
         return 0;
@@ -285,14 +300,15 @@ function not_instruction(instruction, errors) {
 
     let [a, b] = instruction.args;
     if (a == "r0" && b == "r0")
-        return 131;
+        return 0x83;
     else if (a == "r0" && b == "r1")
-        return 147;
+        return 0x93;
     else if (a == "r1" && b == "r0")
-        return 143;
+        return 0x8F;
     else if (a == "r1" && b == "r1")
-        return 159;
+        return 0x9F;
     else {
+        //unreachable
         return 0;
     }
 }
@@ -311,7 +327,7 @@ function cal_instruction(instruction, errors) {
         }
     }
 
-    var result = 128;
+    var result = 0x80; //128
     switch(instruction.op){
         case "add":
             result += 0; break;

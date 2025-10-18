@@ -7,6 +7,7 @@ import {Token, InvalidToken, Lexer} from '../modules/lexer.js';
 import {ArithmeticExpression, AssignmentStatement, FunctionDef, IfStatement, Parser, ReturnStatement, VarDeclaration, WhileStatement} from '../modules/parser.js';
 import { analyze } from '../modules/semantic.js';
 import { assemble } from '../modules/backend.js';
+import { VirtualMachine, decode} from '../modules/virtualMachine.js';
 
 function test(name, code){
     try {
@@ -435,5 +436,19 @@ test('test nesting with optimizer', () => {
     asStr = asm.toString()
     console.log(asStr);
     console.log(asStr.split("\n").length, " lines");
+
+});
+
+
+test('testDecode', () => {
+
+    const machineCode = [
+        0x45, 0x66, 0x84, 0x05,
+        0xa1, 0x00, 0x01 
+    ]
+
+    const decoded = machineCode.map(decode)
+
+    decoded.forEach( x => console.log(JSON.stringify(x)))
 
 });
