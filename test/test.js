@@ -469,3 +469,22 @@ test('testBasicProgram', () => {
     }
 
 });
+
+test('testBasicLoop', () => {
+
+    const machineCode = [
+       0x4b, 0x6c, 0xc1, 0xc2,
+       0xa6, 0x4b, 0x6d, 0x84,
+       0x0b, 0xb7, 0xa1, 0x00,
+       0x03, 0x01
+    ]
+
+    let vm = new VirtualMachine(machineCode)
+    let steps = 0
+    while(!vm.halted & steps < 40){
+        vm.step()
+        console.log(JSON.stringify(vm))
+        steps++
+    }
+
+});

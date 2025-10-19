@@ -38,14 +38,44 @@ export class VirtualMachine{
             }
             this.reg[decoded.dest] = result
 
-            this.ne = a != b
-            this.gt = a > b
+            this.ne = (a != b)
+            this.gt = (a > b)
             this.pc += 1
             break
 
-            case "nop": throw "unimplemented"
+            case "nop": this.pc += 1; break
             case "halt" : this.halted = true; break
-            case "jump" : throw "unimplemented"
+
+            case "jump" : 
+            this.pc += decoded.offset
+            this.pc &= 0x1F;
+            break;
+
+            case "bgt" :
+            if(this.gt){
+                this.pc += decoded.offset
+                this.pc &= 0x1F;
+            } else {
+                this.pc += 1
+            }
+            break
+
+            case "bne" :
+            if(this.ne){
+                this.pc += decoded.offset
+                this.pc &= 0x1F;
+            } else {
+                this.pc += 1
+            }
+            break
+
+            case "cmp" :
+                console.log("cmp :" + JSON.stringify(decoded))
+            this.gt = (this.reg[decoded.src1] > this.reg[decoded.src2])
+            this.ne = (this.reg[decoded.src1] != this.reg[decoded.src2])
+            this.pc += 1
+            break
+
 
             default:
                 throw "unimplemented"
