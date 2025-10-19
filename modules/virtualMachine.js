@@ -3,18 +3,55 @@
 export class VirtualMachine{
     //ram contents should be byte[]
     constructor(ramContents){
-        this.ram = ramContents
+        this.ram = Array(32)
+        this.ram.splice(0, ramContents.length, ...ramContents)
         this.pc = 0
-        this.r0 = 0
-        this.r1 = 0
+        this.reg = [0,0]
+        this.ne = false
+        this.gt = false
+        this.halted = false
     }
     
     step(){
-        const instruction = ramContents[pc]
+        const instruction = this.ram[this.pc]
         const decoded = decode(instruction)
         switch(decoded.op){
+            case "store":
+            this.ram[decoded.addr] = this.reg[decoded.reg]
+            this.pc += 1
+            break
             
-        }
+            case "load":
+            this.reg[decoded.reg] = this.ram[decoded.addr]
+            this.pc += 1
+            break
+
+            case "alu":
+            const a = this.reg[decoded.src1]
+            const b = this.reg[decoded.src2]
+            let result = 0
+            switch(decoded.operator){
+                case "add": result = a + b; break
+                case "sub": result = a - b; break
+                case "and" : result = a & b; break
+                case "nor" : result = ~(a | b); break
+            }
+            this.reg[decoded.dest] = result
+
+            this.ne = a != b
+            this.gt = a > b
+            this.pc += 1
+            break
+
+            case "nop": throw "unimplemented"
+            case "halt" : this.halted = true; break
+            case "jump" : throw "unimplemented"
+
+            default:
+                throw "unimplemented"
+
+
+        }   
     }
     
     
@@ -134,19 +171,19 @@ export function decode(instruction){
                 return { op: "jump", offset: address }
             }
         }
-
+        
         default: //3
-            const bgt = (instruction >> 5) & 1
-            const address = instruction & 0x1F
-
-            if(address == 0){
-                //compare instruction, rb = 0
-                return { op: "cmp", src1: bgt, src2: 0}
-            } else if(address == 1){
-                return { op: "cmp", src1: bgt, src2: 1}
-            } else {
-                return { op: (bgt ? "bgt" : "bne"), offset: address }
-            }
+        const bgt = (instruction >> 5) & 1
+        const address = instruction & 0x1F
+        
+        if(address == 0){
+            //compare instruction, rb = 0
+            return { op: "cmp", src1: bgt, src2: 0}
+        } else if(address == 1){
+            return { op: "cmp", src1: bgt, src2: 1}
+        } else {
+            return { op: (bgt ? "bgt" : "bne"), offset: address }
+        }
     }
 }
 

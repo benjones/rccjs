@@ -452,3 +452,20 @@ test('testDecode', () => {
     decoded.forEach( x => console.log(JSON.stringify(x)))
 
 });
+
+test('testBasicProgram', () => {
+
+    const machineCode = [
+        0x45, 0x66, 0x84, 0x05,
+        0xa1, 0x00, 0x01 
+    ]
+
+    let vm = new VirtualMachine(machineCode)
+    let steps = 0
+    while(!vm.halted & steps < 10){
+        vm.step()
+        console.log(JSON.stringify(vm))
+        steps++
+    }
+
+});
