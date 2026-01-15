@@ -63,5 +63,9 @@ function syncUI(vm){
 }
 
 syncUI(vm)
+document.getElementById('singleStep').onclick = ()=>{
+    vm.step();
+    syncUI(vm);
+}
     
 

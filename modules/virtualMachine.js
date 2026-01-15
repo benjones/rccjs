@@ -16,6 +16,7 @@ export class VirtualMachine{
     step(){
         const instruction = this.ram[this.pc]
         const decoded = decode(instruction)
+        console.log("stepping instruction: ", JSON.stringify(decoded))
         switch(decoded.op){
             case "store":
             this.ram[decoded.addr] = this.reg[decoded.reg]

@@ -24,6 +24,11 @@ window.onload = () => {
 
     document.getElementById('compileButton').onclick = compile;
     document.getElementById('assembleButton').onclick = runAssembler;
+    document.getElementById('runButton').onclick = ()=>{
+        let memory = machineCodeElement.textContent.replace(/\s/g, "");;
+        let url = `virtualmachine.html?memory=${memory}`
+        window.open(url, '_blank').focus();
+    }
 
     function compile() {
         let source = editor.innerText;
