@@ -4,6 +4,7 @@ export class VirtualMachine{
     //ram contents should be byte[]
     constructor(ramContents){
         this.ram = Array(32)
+        this.ram.fill(0)
         this.ram.splice(0, ramContents.length, ...ramContents)
         this.pc = 0
         this.reg = [0,0]
@@ -214,6 +215,27 @@ export function decode(instruction){
         } else {
             return { op: (bgt ? "bgt" : "bne"), offset: address }
         }
+    }
+}
+
+
+
+
+//convert a machine code instruction into assembly string
+export function disassemble(ram, index){
+    let machineCode = ram[index]
+    let inst = decode(machineCode)
+    let reg = r => 'r' + r
+    switch(inst.op){
+        case "load" : return `${inst.op} ${inst.addr}, ${reg(inst.reg)}`
+        case "store" : return `${inst.op} ${reg(inst.reg)}, ${inst.addr}`
+        case "alu" : return `${inst.operator} ${reg(inst.src1)}, ${reg(inst.src2)}, ${reg(inst.dest)}`
+        case "nop" : return "nop"
+        case "halt" : return "halt"
+        case "jump": case "bne": case "bgt":
+             return `${inst.op} ${(index + inst.offset) % 32}`
+        case "cmp" : return `cmp ${reg(inst.src1)} ${reg(inst.src2)}`
+        default: return JSON.stringify(inst)
     }
 }
 
