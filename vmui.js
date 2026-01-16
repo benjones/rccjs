@@ -23,18 +23,23 @@ function updateText(id, newText){
 
 let byteToString = b => b.toString(16).toUpperCase().padStart(2, '0')
 
-updateText('r0_text', 'AB')
+
 
 let memory = []
 let query = new URLSearchParams(document.location.search)
-if(query.has('memory')){
-    let hexString = query.get('memory')
-    memory = [...Array(hexString.length/2).keys()].map(
-        i=>parseInt(hexString.slice(2*i, 2*(i+1)),16))
+let vm
+function reset(){
+    if(query.has('memory')){
+        let hexString = query.get('memory')
+        memory = [...Array(hexString.length/2).keys()].map(
+            i=>parseInt(hexString.slice(2*i, 2*(i+1)),16))
+    }
+    console.log(memory)
+    vm = new VirtualMachine(memory)
+    syncUI(vm)
 }
-console.log(memory)
 
-let vm = new VirtualMachine(memory)
+
 
 function syncUI(vm){
     updateText('r0_text', byteToString(vm.reg[0]))
@@ -62,10 +67,13 @@ function syncUI(vm){
 
 }
 
-syncUI(vm)
+reset()
+
 document.getElementById('singleStep').onclick = ()=>{
     vm.step();
     syncUI(vm);
 }
+
+document.getElementById('reset').onclick = reset
     
 
