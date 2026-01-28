@@ -26,7 +26,7 @@ window.onload = () => {
     document.getElementById('assembleButton').onclick = runAssembler;
     document.getElementById('runButton').onclick = ()=>{
         let memory = machineCodeElement.textContent.replace(/\s/g, "");;
-        let url = `virtualmachine.html?memory=${memory}`
+        let url = `virtualMachine.html?memory=${memory}`
         window.open(url, '_blank').focus();
     }
 
