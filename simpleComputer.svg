@@ -38,6 +38,58 @@
      inkscape:current-layer="layer1" />
   <defs
      id="defs1">
+    <linearGradient
+       id="linearGradient14"
+       inkscape:collect="always"
+       inkscape:label="greenOff">
+      <stop
+         style="stop-color:#105a00;stop-opacity:1;"
+         offset="0"
+         id="stop14" />
+      <stop
+         style="stop-color:#105a00;stop-opacity:1;"
+         offset="1"
+         id="stop15" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient10"
+       inkscape:collect="always"
+       inkscape:label="greenOn">
+      <stop
+         style="stop-color:#1bc900;stop-opacity:1;"
+         offset="0"
+         id="stop10" />
+      <stop
+         style="stop-color:#1bc900;stop-opacity:1;"
+         offset="1"
+         id="stop11" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient6"
+       inkscape:collect="always"
+       inkscape:label="redOn">
+      <stop
+         style="stop-color:#ff0b0b;stop-opacity:1;"
+         offset="0"
+         id="stop6" />
+      <stop
+         style="stop-color:#ff0b0b;stop-opacity:1;"
+         offset="1"
+         id="stop8" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient1"
+       inkscape:collect="always"
+       inkscape:label="redOff">
+      <stop
+         style="stop-color:#4b0000;stop-opacity:1;"
+         offset="0"
+         id="stop1" />
+      <stop
+         style="stop-color:#4b0000;stop-opacity:1;"
+         offset="1"
+         id="stop2" />
+    </linearGradient>
     <inkscape:path-effect
        effect="mirror_symmetry"
        start_point="25.857357,138.86777"
@@ -187,7 +239,7 @@
        gradientUnits="userSpaceOnUse" />
     <linearGradient
        inkscape:collect="always"
-       xlink:href="#linearGradient1"
+       xlink:href="#linearGradient6"
        id="linearGradient4"
        x1="23.360334"
        y1="141.55705"
@@ -196,20 +248,20 @@
        gradientUnits="userSpaceOnUse" />
     <linearGradient
        inkscape:collect="always"
-       xlink:href="#linearGradient6"
+       xlink:href="#linearGradient1"
        id="linearGradient9"
-       x1="23.360335"
+       x1="23.360334"
        y1="141.55705"
-       x2="28.388509"
+       x2="28.38851"
        y2="141.55705"
        gradientUnits="userSpaceOnUse" />
     <linearGradient
        inkscape:collect="always"
-       xlink:href="#linearGradient10"
+       xlink:href="#linearGradient14"
        id="linearGradient11"
-       x1="23.360335"
+       x1="23.360334"
        y1="141.55705"
-       x2="28.388509"
+       x2="28.38851"
        y2="141.55705"
        gradientUnits="userSpaceOnUse" />
     <linearGradient

@@ -16,6 +16,10 @@ let indicatorGreenOffFill = svg.querySelector('#ne_on').style.fill
 let indicatorRedOnFill = svg.querySelector('#gt_off').style.fill
 let indicatorGreenOnFill = svg.querySelector('#gt_on').style.fill
 
+let pcHighlight = svg.querySelector('#instruction_highlight')
+console.log(pcHighlight)
+const pcHighlightBaseline = pcHighlight.getAttribute('y')
+
 //assumes id is a text field with a tspan child to edit
 function updateText(id, newText){
     svg.querySelector('#' +id).children[0].textContent = newText
@@ -64,6 +68,16 @@ function syncUI(vm){
     updateIndicator('ne', vm.ne)
     updateIndicator('gt', vm.gt)
     updateIndicator('halt', vm.halted)
+
+    //update the PC highlighter
+    console.log(pcHighlightBaseline)
+    let highlightedText = svg.querySelector('#memory_contents_asm').children[vm.pc]
+    let textHeight = highlightedText.getBBox().height
+    console.log(textHeight)
+    pcHighlight.setAttribute('y', 
+        parseFloat(highlightedText.getAttribute('y')) - textHeight*.95)
+        //fudge it a bit to center it slightly better
+    console.log(pcHighlight.getAttribute('y'))
 
 }
 
