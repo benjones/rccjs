@@ -89,5 +89,25 @@ document.getElementById('singleStep').onclick = ()=>{
 }
 
 document.getElementById('reset').onclick = reset
+
+let running = false;
+
+async function runSimulation(){
+
+    running = true;
+    while(running){
+        vm.step()
+        syncUI(vm)
+        if(vm.halted){
+            running = false;
+        }
+        //sleep 300ms
+        await new Promise(r => setTimeout(r, 300))
+    }
+}
+
+document.getElementById('run').onclick = runSimulation
+document.getElementById('pause').onclick = ()=>{running = false; }
+
     
 
