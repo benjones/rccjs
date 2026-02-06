@@ -32,7 +32,10 @@ let byteToString = b => b.toString(16).toUpperCase().padStart(2, '0')
 let memory = []
 let query = new URLSearchParams(document.location.search)
 let vm
+let running = false
+
 function reset(){
+    running = false
     if(query.has('memory')){
         let hexString = query.get('memory')
         memory = [...Array(hexString.length/2).keys()].map(
@@ -90,7 +93,7 @@ document.getElementById('singleStep').onclick = ()=>{
 
 document.getElementById('reset').onclick = reset
 
-let running = false;
+
 
 async function runSimulation(){
 
