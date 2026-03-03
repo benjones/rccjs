@@ -11,6 +11,12 @@ window.onload = () => {
     //runWhenTypingStops(asmElement, runAssembler);
     document.getElementById('assembleButton').onclick = runAssembler;
 
+    document.getElementById('runButton').onclick = ()=>{
+        let memory = machineCodeElement.textContent.replace(/\s/g, "");;
+        let url = `virtualMachine.html?memory=${memory}`
+        window.open(url, '_blank').focus();
+    }
+
     function runAssembler(){
         let asmString =  asmElement.innerText;
         document.getElementById('assemblyPane').updateLineNumbers();
