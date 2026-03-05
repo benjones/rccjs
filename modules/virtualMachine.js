@@ -38,10 +38,10 @@ export class VirtualMachine{
                 case "and" : result = a & b; break
                 case "nor" : result = ~(a | b); break
             }
+            result &= 0xFF; //fit to size
             this.reg[decoded.dest] = result
 
-            this.ne = (a != b)
-            this.gt = (a > b)
+            this.#setFlags(a, b)
             this.pc += 1
             break
 
@@ -73,8 +73,7 @@ export class VirtualMachine{
 
             case "cmp" :
                 console.log("cmp :" + JSON.stringify(decoded))
-            this.gt = (this.reg[decoded.src1] > this.reg[decoded.src2])
-            this.ne = (this.reg[decoded.src1] != this.reg[decoded.src2])
+            this.#setFlags(this.reg[decoded.src1], this.reg[decoded.src2])
             this.pc += 1
             break
 
@@ -86,6 +85,10 @@ export class VirtualMachine{
         }   
     }
     
+    #setFlags(a, b){
+        this.gt = byteToSigned(a) > byteToSigned(b);
+        this.ne = a != b 
+    }
     
 }
 
@@ -240,3 +243,7 @@ export function disassemble(ram, index){
     }
 }
 
+function byteToSigned(b){
+    //bitwise ops convert numbers to 32 bit signed ints
+    return (b << 24) >> 24;
+}
